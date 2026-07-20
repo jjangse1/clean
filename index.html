@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PARTS LCM · Parts Lifecycle Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d1119;
+  --bg-1:#141a26;
+  --bg-2:#1a2233;
+  --bg-3:#212b40;
+  --border:#2a3348;
+  --border-soft:#232c40;
+  --text:#e7ebf3;
+  --text-dim:#8b93a8;
+  --text-faint:#5c6478;
+  --accent:#5b9bd9;
+  --accent-soft:rgba(91,155,217,0.14);
+  --accent-2:#6fd7c4;
+  --accent-2-soft:rgba(111,215,196,0.14);
+  --warn:#e2a03f;
+  --warn-soft:rgba(226,160,63,0.14);
+  --danger:#e2574c;
+  --danger-soft:rgba(226,87,76,0.14);
+  --good:#4caf82;
+  --good-soft:rgba(76,175,130,0.14);
+  --sans:'IBM Plex Sans KR',-apple-system,sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:#2a3348;border-radius:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+a{color:inherit;}
+button{font-family:var(--sans);cursor:pointer;}
+
+/* ---------- Layout ---------- */
+.app{display:flex;min-height:100vh;}
+.sidebar{
+  width:232px;flex:none;background:var(--bg-1);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{padding:20px 18px 16px;border-bottom:1px solid var(--border-soft);}
+.brand .mark{display:flex;align-items:center;gap:9px;}
+.brand .chip{
+  width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:12px;color:#08101c;flex:none;
+}
+.brand .name{font-weight:700;font-size:14.5px;letter-spacing:0.2px;}
+.brand .sub{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);margin-top:2px;letter-spacing:0.5px;}
+
+.nav{padding:14px 10px;flex:1;}
+.nav-group{margin-bottom:6px;}
+.nav-group-label{font-size:10.5px;color:var(--text-faint);letter-spacing:1px;padding:10px 10px 6px;font-family:var(--mono);}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--text-dim);
+  font-size:13px;font-weight:500;cursor:pointer;margin-bottom:2px;transition:background .12s, color .12s;
+  border:1px solid transparent;
+}
+.nav-item:hover{background:var(--bg-2);color:var(--text);}
+.nav-item.active{background:var(--accent-soft);color:var(--accent);border-color:rgba(91,155,217,0.25);}
+.nav-item .ico{width:16px;text-align:center;font-size:13px;flex:none;}
+.nav-sub{padding-left:16px;}
+.nav-sub .nav-item{font-size:12.3px;padding:7px 12px;}
+
+.sidebar-foot{padding:14px 16px;border-top:1px solid var(--border-soft);font-size:11px;color:var(--text-faint);line-height:1.6;}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{
+  height:60px;flex:none;border-bottom:1px solid var(--border);background:rgba(13,17,25,0.85);backdrop-filter:blur(6px);
+  display:flex;align-items:center;gap:14px;padding:0 22px;position:sticky;top:0;z-index:20;
+}
+.page-title{font-size:15.5px;font-weight:700;letter-spacing:0.2px;}
+.page-sub{font-size:11.5px;color:var(--text-faint);font-family:var(--mono);margin-top:1px;}
+.topbar-spacer{flex:1;}
+.search-box{
+  display:flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;
+  padding:7px 12px;width:280px;
+}
+.search-box input{background:transparent;border:none;outline:none;color:var(--text);font-family:var(--mono);font-size:12.5px;width:100%;}
+.search-box .ico{color:var(--text-faint);font-size:12px;}
+.role-select{
+  background:var(--bg-2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:12.5px;
+  font-family:var(--sans);outline:none;
+}
+.btn{
+  background:var(--accent);color:#07101c;border:none;border-radius:8px;padding:9px 15px;font-size:12.8px;font-weight:700;
+  display:flex;align-items:center;gap:6px;
+}
+.btn.ghost{background:var(--bg-2);color:var(--text);border:1px solid var(--border);font-weight:600;}
+.btn.small{padding:6px 11px;font-size:11.8px;}
+.btn.danger{background:var(--danger);color:#160504;}
+
+.content{padding:22px 26px 60px;}
+.view{display:none;}
+.view.active{display:block;animation:fadein .18s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+/* ---------- Common widgets ---------- */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius);padding:16px 17px;position:relative;overflow:hidden;}
+.kpi-card .label{font-size:11.5px;color:var(--text-faint);font-family:var(--mono);letter-spacing:0.4px;text-transform:uppercase;}
+.kpi-card .value{font-size:26px;font-weight:700;margin-top:8px;font-family:var(--mono);}
+.kpi-card .delta{font-size:11.5px;margin-top:6px;color:var(--text-dim);}
+.kpi-card .delta.up{color:var(--good);}
+.kpi-card .delta.down{color:var(--danger);}
+.kpi-card .bar-accent{position:absolute;left:0;top:0;bottom:0;width:3px;}
+
+.grid{display:grid;gap:16px;}
+.grid.cols-2{grid-template-columns:1fr 1fr;}
+.grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+@media(max-width:1100px){.grid.cols-2,.grid.cols-3{grid-template-columns:1fr;}}
+
+.panel{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius);padding:18px 19px;}
+.panel-head{display:flex;align-items:center;margin-bottom:14px;gap:10px;}
+.panel-title{font-size:13.5px;font-weight:700;}
+.panel-title .tag{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);font-weight:400;margin-left:8px;}
+.panel-head .spacer{flex:1;}
+
+table{width:100%;border-collapse:collapse;font-size:12.6px;}
+th{
+  text-align:left;color:var(--text-faint);font-weight:600;font-size:10.8px;letter-spacing:0.4px;text-transform:uppercase;
+  padding:8px 10px;border-bottom:1px solid var(--border);font-family:var(--mono);white-space:nowrap;
+}
+td{padding:9px 10px;border-bottom:1px solid var(--border-soft);color:var(--text);white-space:nowrap;}
+tbody tr:hover{background:var(--bg-2);}
+.table-scroll{overflow-x:auto;}
+.mono{font-family:var(--mono);}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:100px;font-size:11px;font-weight:600;font-family:var(--mono);}
+.badge.normal{background:var(--good-soft);color:var(--good);}
+.badge.cd{background:var(--warn-soft);color:var(--warn);}
+.badge.defect{background:var(--danger-soft);color:var(--danger);}
+.badge.npw{background:rgba(160,120,230,.16);color:#b79bee;}
+.badge.pm{background:var(--accent-soft);color:var(--accent);}
+.badge.bm{background:var(--danger-soft);color:var(--danger);}
+.badge.full{background:var(--good-soft);color:var(--good);}
+.badge.mid{background:var(--warn-soft);color:var(--warn);}
+.badge.neutral{background:var(--bg-3);color:var(--text-dim);}
+
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none;}
+.dot.normal{background:var(--good);} .dot.cd{background:var(--warn);} .dot.defect{background:var(--danger);} .dot.npw{background:#b79bee;}
+
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.filters select,.filters input{
+  background:var(--bg-2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:12px;
+  font-family:var(--sans);outline:none;
+}
+.filters .clear{color:var(--text-faint);font-size:11.5px;padding:7px 6px;text-decoration:underline;cursor:pointer;}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{
+  padding:10px 14px;font-size:12.6px;font-weight:600;color:var(--text-faint);border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;
+}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+.chart-wrap{position:relative;height:270px;}
+.chart-wrap.short{height:200px;}
+
+/* lifecycle timeline */
+.timeline{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 0 14px;}
+.tl-step{
+  flex:none;min-width:96px;padding:10px 14px 10px 20px;position:relative;background:var(--bg-2);margin-right:4px;border-radius:6px;
+  cursor:pointer;border:1px solid var(--border-soft);transition:transform .1s;
+}
+.tl-step:hover{transform:translateY(-2px);}
+.tl-step.sel{outline:2px solid var(--accent);}
+.tl-step:after{
+  content:"";position:absolute;right:-9px;top:50%;transform:translateY(-50%);width:0;height:0;
+  border-top:19px solid transparent;border-bottom:19px solid transparent;border-left:9px solid var(--bg-2);z-index:2;
+}
+.tl-step:last-child:after{display:none;}
+.tl-step .cyc{font-family:var(--mono);font-size:10px;color:var(--text-faint);}
+.tl-step .st{font-size:12px;font-weight:700;margin-top:3px;}
+.tl-step .dt{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:2px;}
+.tl-step.normal{border-left:3px solid var(--good);}
+.tl-step.cd{border-left:3px solid var(--warn);}
+.tl-step.defect{border-left:3px solid var(--danger);}
+.tl-step.npw{border-left:3px solid #b79bee;}
+
+.heat-grid{display:grid;gap:3px;}
+.heat-cell{
+  padding:9px 4px;text-align:center;border-radius:5px;font-size:11px;font-family:var(--mono);font-weight:600;color:#08101c;
+}
+.heat-row-label{font-size:11px;color:var(--text-dim);display:flex;align-items:center;padding-right:6px;font-family:var(--mono);}
+.heat-col-label{font-size:10px;color:var(--text-faint);text-align:center;font-family:var(--mono);padding-bottom:4px;}
+
+.insight-card{
+  display:flex;gap:12px;padding:13px 14px;border-radius:9px;background:var(--bg-2);border:1px solid var(--border-soft);margin-bottom:10px;
+}
+.insight-card .ic-icon{
+  width:34px;height:34px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;
+}
+.insight-card .ic-body .ic-title{font-weight:700;font-size:13px;margin-bottom:3px;}
+.insight-card .ic-body .ic-desc{font-size:12.3px;color:var(--text-dim);line-height:1.55;}
+.insight-card.info .ic-icon{background:var(--accent-soft);color:var(--accent);}
+.insight-card.warn .ic-icon{background:var(--warn-soft);color:var(--warn);}
+.insight-card.danger .ic-icon{background:var(--danger-soft);color:var(--danger);}
+.insight-card.good .ic-icon{background:var(--good-soft);color:var(--good);}
+
+.empty-state{padding:60px 20px;text-align:center;color:var(--text-faint);}
+.empty-state .big{font-size:32px;margin-bottom:10px;}
+
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.compare-card{border-radius:9px;padding:14px;border:1px solid var(--border-soft);}
+.compare-card.best{background:var(--good-soft);border-color:rgba(76,175,130,.3);}
+.compare-card.worst{background:var(--danger-soft);border-color:rgba(226,87,76,.3);}
+.compare-card .cc-label{font-family:var(--mono);font-size:10.5px;letter-spacing:0.5px;margin-bottom:8px;text-transform:uppercase;}
+.compare-card.best .cc-label{color:var(--good);}
+.compare-card.worst .cc-label{color:var(--danger);}
+.compare-card .cc-row{display:flex;justify-content:space-between;font-size:12.3px;padding:4px 0;color:var(--text-dim);}
+.compare-card .cc-row b{color:var(--text);font-weight:600;}
+
+.stat-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.stat-box{background:var(--bg-2);border:1px solid var(--border-soft);border-radius:8px;padding:12px 13px;}
+.stat-box .sv{font-family:var(--mono);font-size:19px;font-weight:700;}
+.stat-box .sl{font-size:10.8px;color:var(--text-faint);margin-top:3px;}
+
+.roadmap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
+.roadmap-card{background:var(--bg-2);border:1px solid var(--border-soft);border-radius:9px;padding:15px;}
+.roadmap-card .rc-status{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:100px;display:inline-block;margin-bottom:9px;}
+.roadmap-card h4{margin:0 0 6px;font-size:13.5px;}
+.roadmap-card p{margin:0;font-size:12px;color:var(--text-dim);line-height:1.6;}
+
+/* modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(6,8,14,0.7);display:none;align-items:center;justify-content:center;z-index:100;padding:24px;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--bg-1);border:1px solid var(--border);border-radius:12px;width:100%;max-width:680px;max-height:88vh;overflow-y:auto;
+  padding:22px 24px;
+}
+.modal h3{margin:0 0 4px;font-size:16px;}
+.modal .msub{font-size:11.5px;color:var(--text-faint);font-family:var(--mono);margin-bottom:16px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.form-field{display:flex;flex-direction:column;gap:5px;}
+.form-field.full{grid-column:1/-1;}
+.form-field label{font-size:11px;color:var(--text-faint);font-family:var(--mono);}
+.form-field select,.form-field input,.form-field textarea{
+  background:var(--bg-2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12.6px;
+  font-family:var(--sans);outline:none;
+}
+.form-field textarea{resize:vertical;min-height:56px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+
+.role-note{
+  display:flex;gap:9px;align-items:flex-start;background:var(--accent-soft);border:1px solid rgba(91,155,217,.25);color:var(--accent);
+  padding:10px 13px;border-radius:8px;font-size:12px;margin-bottom:16px;
+}
+.section-note{color:var(--text-faint);font-size:12px;margin:-6px 0 16px;line-height:1.6;}
+.small-text{font-size:11.3px;color:var(--text-faint);}
+.hidden{display:none !important;}
+.pill-toggle{display:flex;gap:4px;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:3px;}
+.pill-toggle button{background:none;border:none;color:var(--text-dim);padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;}
+.pill-toggle button.active{background:var(--accent);color:#07101c;}
+.sn-link{color:var(--accent);cursor:pointer;font-family:var(--mono);font-weight:600;}
+.sn-link:hover{text-decoration:underline;}
+
+/* ---- Operation live board additions ---- */
+.live-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;color:var(--good);letter-spacing:.5px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 rgba(76,175,130,.6);animation:pulse 1.6s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(76,175,130,.55);}70%{box-shadow:0 0 0 7px rgba(76,175,130,0);}100%{box-shadow:0 0 0 0 rgba(76,175,130,0);}}
+
+.minibar-list{display:flex;flex-direction:column;gap:10px;}
+.minibar-row{display:grid;grid-template-columns:74px 1fr 34px;align-items:center;gap:9px;}
+.minibar-row .mb-label{font-size:12px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.minibar-row .mb-track{background:var(--bg-2);border-radius:5px;height:10px;overflow:hidden;}
+.minibar-row .mb-fill{height:100%;border-radius:5px;}
+.minibar-row .mb-val{font-family:var(--mono);font-size:11.5px;color:var(--text-dim);text-align:right;}
+
+.stage-flow{display:flex;gap:6px;flex-wrap:wrap;}
+.stage-chip{flex:1;min-width:110px;background:var(--bg-2);border:1px solid var(--border-soft);border-radius:8px;padding:11px 12px;}
+.stage-chip .sc-n{font-family:var(--mono);font-size:20px;font-weight:700;}
+.stage-chip .sc-l{font-size:10.8px;color:var(--text-faint);margin-top:3px;}
+.stage-chip.alert{border-color:rgba(226,87,76,.4);background:var(--danger-soft);}
+.stage-chip.alert .sc-n{color:var(--danger);}
+
+.factory-board{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.factory-board .fb-head{padding:12px 15px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;gap:8px;background:var(--bg-2);}
+.factory-board .fb-head b{font-size:13px;}
+.station-row{display:flex;align-items:center;justify-content:space-between;padding:10px 15px;border-bottom:1px solid var(--border-soft);font-size:12.6px;}
+.station-row:last-child{border-bottom:none;}
+.station-row .st-name{display:flex;align-items:center;gap:9px;}
+.station-status{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;}
+.station-status .sdot{width:7px;height:7px;border-radius:50%;}
+.station-status.running{background:var(--good-soft);color:var(--good);}
+.station-status.running .sdot{background:var(--good);animation:pulse 1.6s infinite;}
+.station-status.idle{background:var(--bg-3);color:var(--text-faint);}
+.station-status.idle .sdot{background:var(--text-faint);}
+.station-status.waiting{background:var(--warn-soft);color:var(--warn);}
+.station-status.waiting .sdot{background:var(--warn);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <div class="sidebar">
+    <div class="brand">
+      <div class="mark">
+        <div class="chip">PL</div>
+        <div>
+          <div class="name">PARTS LCM</div>
+          <div class="sub">LIFECYCLE INTELLIGENCE</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav" id="navContainer"></div>
+    <div class="sidebar-foot">v0.1 · 세정공정 파츠 이력관리<br>샘플 데이터 기반 데모</div>
+  </div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Executive Dashboard</div>
+        <div class="page-sub" id="pageSub">EXECUTIVE · OVERVIEW</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="search-box">
+        <span class="ico">S/N</span>
+        <input id="globalSearch" list="snList" placeholder="시리얼 번호로 이력 검색..." />
+        <datalist id="snList"></datalist>
+      </div>
+      <select class="role-select" id="roleSelect">
+        <option value="admin">관리자</option>
+        <option value="inspector">검사자</option>
+        <option value="operator">작업자</option>
+        <option value="customer">고객사 조회</option>
+      </select>
+      <button class="btn" id="newRecordBtn">+ 신규 등록</button>
+    </div>
+
+    <div class="content" id="content"><!-- views injected by JS --></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<script>
+/* =====================================================================
+   PARTS LCM — sample-data engine + rendering
+   ===================================================================== */
+(function(){
+"use strict";
+
+/* ---------------------- 1. MASTER DATA ---------------------- */
+const CUSTOMERS = ['고객사 A','고객사 B','고객사 C','고객사 D','고객사 E'];
+const MAKERS = ['AMAT','LAM','TEL','ASM'];
+const PROCESSES = ['ETCH','CVD','PVD','CMP'];
+const GAS_BY_PROCESS = {
+  ETCH:['POLY','OXIDE','METAL'],
+  CVD:['OXIDE','NITRIDE'],
+  PVD:['METAL','BARRIER'],
+  CMP:['OXIDE','METAL']
+};
+const PART_KITS = [
+  {name:'Focus Ring', coated:true, baseLife:520},
+  {name:'Edge Ring', coated:true, baseLife:430},
+  {name:'Upper Electrode', coated:true, baseLife:610},
+  {name:'Shower Head', coated:true, baseLife:580},
+  {name:'Liner', coated:false, baseLife:700},
+  {name:'Chamber Liner', coated:false, baseLife:650},
+  {name:'Baffle Plate', coated:false, baseLife:480},
+  {name:'Gas Distribution Plate', coated:true, baseLife:540}
+];
+const FACTORIES = ['1공장','2공장'];
+const CLEAN_EQUIP = ['CE-01','CE-02','CE-03','CE-04','CE-05'];
+const OPERATORS = ['김민수','이정훈','박서준','최유리','정다은'];
+const INSPECTORS_IN = ['오지훈','한소희','서지민'];
+const INSPECTORS_OUT = ['장동혁','윤아름','신하늘'];
+const ISSUE_TYPES = ['정상','CD불량','DEFECT','NPW문제'];
+const PM_TYPES = ['정기PM','BM'];
+const CYCLE_TYPES = ['정상사이클','중간이탈'];
+const ACTIONS_BY_ISSUE = {
+  '정상': ['이상 없음 - 표준 세정 절차 완료','기준치 이내 확인 후 정상 출하'],
+  'CD불량': ['CD 재측정 후 리코팅 진행','코팅 두께 보정 후 재검사'],
+  'DEFECT': ['Particle 재세정 (2차 클리닝) 실시','초음파 세정 추가 후 재검사'],
+  'NPW문제': ['NPW 테스트 챔버 재투입 조치','표면 프로파일 재작업 후 재출하']
+};
+
+function rand(min,max){ return Math.random()*(max-min)+min; }
+function randInt(min,max){ return Math.floor(rand(min,max+1)); }
+function pick(arr){ return arr[randInt(0,arr.length-1)]; }
+function seededDateAdd(date, days){ const d = new Date(date); d.setDate(d.getDate()+Math.round(days)); return d; }
+function fmtDate(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function monthKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+
+/* weighted issue picker - injects realistic "bad actor" patterns for analytics */
+function pickIssue(equip, operator, maker, process, gas){
+  let w = {'정상':62, 'CD불량':12, 'DEFECT':13, 'NPW문제':13};
+  if (equip === 'CE-03') w['DEFECT'] += 22;
+  if (operator === '박서준') w['CD불량'] += 18;
+  if (maker === 'TEL' && process === 'ETCH' && gas === 'METAL') w['NPW문제'] += 20;
+  if (process === 'CMP') w['CD불량'] += 8;
+  w['정상'] = Math.max(20, w['정상'] - (w['CD불량']+w['DEFECT']+w['NPW문제'] - 38));
+  const total = w['정상']+w['CD불량']+w['DEFECT']+w['NPW문제'];
+  let r = Math.random()*total;
+  for (const k of ISSUE_TYPES){ if (r < w[k]) return k; r -= w[k]; }
+  return '정상';
+}
+
+/* ---------------------- 2. DATA GENERATION ---------------------- */
+let SERIALS = [];   // one per physical part
+let ALL_CYCLES = []; // flattened cycle history across all serials
+
+function generateData(){
+  SERIALS = [];
+  ALL_CYCLES = [];
+  const today = new Date();
+  const totalSerials = 46;
+
+  for (let i=0;i<totalSerials;i++){
+    const kit = pick(PART_KITS);
+    const customer = pick(CUSTOMERS);
+    const maker = pick(MAKERS);
+    const process = pick(PROCESSES);
+    const gas = pick(GAS_BY_PROCESS[process]);
+    const toolId = `${maker}-${process}-${randInt(1,6)}`;
+    const chamber = `CH${randInt(1,4)}`;
+    const sn = `${kit.name.slice(0,2).toUpperCase()}${maker.slice(0,1)}${String(1000+i).slice(-4)}-${randInt(100,999)}`;
+
+    const cycleCount = randInt(3,10);
+    const startDaysAgo = randInt(180, 900);
+    let cursor = seededDateAdd(today, -startDaysAgo);
+    let cyclesSinceRecoat = 0;
+
+    const serial = {
+      sn, kit: kit.name, coatedKit: kit.coated, baseLife: kit.baseLife,
+      customer, maker, process, gas, toolId, chamber,
+      retired: false, retiredReason:null,
+      cycles: []
+    };
+
+    for (let c=1;c<=cycleCount;c++){
+      const factory = pick(FACTORIES);
+      const equip = pick(CLEAN_EQUIP);
+      const operator = pick(OPERATORS);
+      const inspectorIn = pick(INSPECTORS_IN);
+      const inspectorOut = pick(INSPECTORS_OUT);
+      const pmType = Math.random() < 0.76 ? '정기PM' : 'BM';
+      const cycleType = Math.random() < 0.85 ? '정상사이클' : '중간이탈';
+      const issue = pickIssue(equip, operator, maker, process, gas);
+      cyclesSinceRecoat++;
+      const recoating = kit.coated && (cyclesSinceRecoat >= 3 && Math.random() < 0.55);
+      if (recoating) cyclesSinceRecoat = 0;
+      const coated = kit.coated;
+
+      const inDate = new Date(cursor);
+      const processDays = randInt(2,6) + (recoating?randInt(1,2):0);
+      const outDate = seededDateAdd(inDate, processDays);
+
+      const targetLife = kit.baseLife * (recoating?1.05:1.0) * rand(0.9,1.1);
+      const usageHours = cycleType === '정상사이클'
+        ? Math.round(targetLife * rand(0.85,1.05))
+        : Math.round(targetLife * rand(0.25,0.65));
+
+      const action = pick(ACTIONS_BY_ISSUE[issue]);
+
+      const cycle = {
+        sn, cycleNo:c,
+        customer, maker, process, gas, toolId, chamber, kit: kit.name,
+        inDate: fmtDate(inDate), outDate: fmtDate(outDate),
+        inDateObj:inDate, outDateObj:outDate,
+        factory, equip, operator, inspectorIn, inspectorOut,
+        pmType, issue, coated, recoating, cycleType, usageHours, action,
+        isLast: c===cycleCount
+      };
+      serial.cycles.push(cycle);
+      ALL_CYCLES.push(cycle);
+
+      const gap = randInt(3,25);
+      cursor = seededDateAdd(outDate, gap);
+    }
+
+    // retirement chance for older / heavily used serials
+    const lastCycle = serial.cycles[serial.cycles.length-1];
+    const totalUsage = serial.cycles.reduce((s,c)=>s+c.usageHours,0);
+    if (totalUsage > kit.baseLife * cycleCount * 0.95 && Math.random() < 0.45){
+      serial.retired = true;
+      serial.retiredReason = Math.random()<0.5 ? '누적 사용시간 한계 도달' : '반복 DEFECT 발생으로 Scrap 처리';
+    }
+    SERIALS.push(serial);
+  }
+  ALL_CYCLES.sort((a,b)=> a.inDateObj - b.inDateObj);
+}
+generateData();
+
+/* ---------------------- 3. AGGREGATION HELPERS ---------------------- */
+function groupBy(arr, keyFn){
+  const m = {};
+  arr.forEach(item=>{
+    const k = keyFn(item);
+    (m[k] = m[k]||[]).push(item);
+  });
+  return m;
+}
+function defectRate(cycles){
+  if (!cycles.length) return 0;
+  const bad = cycles.filter(c=>c.issue!=='정상').length;
+  return bad/cycles.length;
+}
+function pct(n){ return (n*100).toFixed(1)+'%'; }
+
+function serialStats(serial){
+  const cycles = serial.cycles;
+  const total = cycles.length;
+  const recoatCount = cycles.filter(c=>c.recoating).length;
+  const fullTime = cycles.filter(c=>c.cycleType==='정상사이클').length;
+  const midPull = total - fullTime;
+  const avgUsage = Math.round(cycles.reduce((s,c)=>s+c.usageHours,0)/total);
+  const dRate = defectRate(cycles);
+  const sorted = [...cycles].sort((a,b)=>b.usageHours-a.usageHours);
+  const best = sorted.find(c=>c.issue==='정상') || sorted[0];
+  const worstCandidates = cycles.filter(c=>c.issue!=='정상').sort((a,b)=>a.usageHours-b.usageHours);
+  const worst = worstCandidates[0] || sorted[sorted.length-1];
+  return {total, recoatCount, fullTime, midPull, avgUsage, dRate, best, worst};
+}
+
+/* cohort = all serials sharing same kit, used for AI life prediction & golden parts */
+function cohortFor(kitName){ return SERIALS.filter(s=>s.kit===kitName); }
+function cohortAvgMaxCycles(kitName){
+  const cohort = cohortFor(kitName);
+  if (!cohort.length) return 6;
+  return cohort.reduce((s,c)=>s+c.cycles.length,0)/cohort.length;
+}
+
+/* -------- AI heuristic engine (rule-based, explainable — not a trained model) -------- */
+function aiRemainingLife(serial){
+  const cohortAvg = cohortAvgMaxCycles(serial.kit);
+  const used = serial.cycles.length;
+  const remainCycles = Math.max(0, Math.round(cohortAvg - used));
+  const stats = serialStats(serial);
+  const remainHours = Math.max(0, Math.round((cohortAvg-used) * stats.avgUsage));
+  return {remainCycles, remainHours, cohortAvg: cohortAvg.toFixed(1)};
+}
+function aiRecoatingRecommendation(serial){
+  const kitInfo = PART_KITS.find(k=>k.name===serial.kit);
+  if (!kitInfo.coated) return {need:false, reason:'비코팅 파츠 (Bare Metal) — Recoating 대상 아님'};
+  let sinceRecoat = 0;
+  for (let i=serial.cycles.length-1;i>=0;i--){
+    if (serial.cycles[i].recoating) break;
+    sinceRecoat++;
+  }
+  const need = sinceRecoat >= 3;
+  return {need, sinceRecoat, reason: need
+    ? `최근 리코팅 이후 ${sinceRecoat}회 연속 세정 진행 — 코팅층 마모 예상, Recoating 권장`
+    : `최근 리코팅 이후 ${sinceRecoat}회 세정 — 아직 여유 있음`};
+}
+function aiScrapRecommendation(serial){
+  const stats = serialStats(serial);
+  const cohortAvg = cohortAvgMaxCycles(serial.kit);
+  const overLife = serial.cycles.length >= cohortAvg*1.05;
+  const highDefect = stats.dRate > 0.4;
+  const need = overLife || highDefect || serial.retired;
+  let reason = [];
+  if (serial.retired) reason.push(`이미 Scrap 처리됨 (${serial.retiredReason})`);
+  if (overLife) reason.push(`동일 파츠군 평균 사용주기(${cohortAvg.toFixed(1)}회) 대비 초과 사용 중`);
+  if (highDefect) reason.push(`불량률 ${pct(stats.dRate)}로 평균 대비 높음`);
+  if (!reason.length) reason.push('현재 안정적인 사용 구간 — Scrap 불필요');
+  return {need, reason: reason.join(' / ')};
+}
+function aiAbnormalPatterns(){
+  const overallRate = defectRate(ALL_CYCLES);
+  const groups = [
+    {label:'세정장비', keyFn:c=>c.equip},
+    {label:'세정담당자', keyFn:c=>c.operator},
+    {label:'장비사+공정', keyFn:c=>c.maker+' / '+c.process}
+  ];
+  const flags = [];
+  groups.forEach(g=>{
+    const gb = groupBy(ALL_CYCLES, g.keyFn);
+    Object.entries(gb).forEach(([k, cycles])=>{
+      if (cycles.length < 5) return;
+      const r = defectRate(cycles);
+      if (r > overallRate*1.4){
+        flags.push({group:g.label, key:k, rate:r, n:cycles.length, baseline:overallRate});
+      }
+    });
+  });
+  return flags.sort((a,b)=>b.rate-a.rate);
+}
+function aiGoldenParts(kitName){
+  const cohort = cohortFor(kitName);
+  if (!cohort.length) return null;
+  let best = null, bestScore = -Infinity;
+  cohort.forEach(s=>{
+    const st = serialStats(s);
+    const score = st.avgUsage * (1 - st.dRate) * Math.log(st.total+1);
+    if (score > bestScore){ bestScore = score; best = s; }
+  });
+  return best;
+}
+
+/* ---------------------- 4. GLOBAL UI STATE ---------------------- */
+let currentRole = 'admin';
+let currentView = 'exec-dashboard';
+let chartRegistry = {};
+
+function destroyChart(id){
+  if (chartRegistry[id]){ chartRegistry[id].destroy(); delete chartRegistry[id]; }
+}
+function makeChart(canvasId, config){
+  destroyChart(canvasId);
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  chartRegistry[canvasId] = new Chart(el.getContext('2d'), config);
+}
+
+const CHART_FONT = { family:"'IBM Plex Mono', monospace", size:11 };
+const GRID_COLOR = 'rgba(255,255,255,0.06)';
+const TXT_DIM = '#8b93a8';
+
+Chart.defaults.color = TXT_DIM;
+Chart.defaults.font.family = "'IBM Plex Sans KR', sans-serif";
+Chart.defaults.font.size = 11.5;
+
+/* expose for inline onclick handlers */
+window.PLCM = {};
+
+
+/* ---------------------- 5. NAV CONFIG ---------------------- */
+const NAV = [
+  {group:'대시보드', items:[
+    {id:'exec-dashboard', label:'Executive', ico:'◆', roles:['admin','inspector','operator','customer']},
+    {id:'ops-dashboard', label:'Operation', ico:'◇', roles:['admin','inspector','operator']},
+    {id:'quality-dashboard', label:'Quality', ico:'✓', roles:['admin','inspector']},
+    {id:'lifecycle-dashboard', label:'Parts Lifecycle', ico:'⟳', roles:['admin','inspector','operator','customer']}
+  ]},
+  {group:'운영', items:[
+    {id:'inout-list', label:'입출고 현황', ico:'▤', roles:['admin','inspector','operator','customer']},
+    {id:'event-log', label:'이벤트 로그', ico:'●', roles:['admin','inspector','operator']}
+  ]},
+  {group:'분석 (Analytics)', items:[
+    {id:'analytics', label:'통합 분석', ico:'▦', roles:['admin','inspector']}
+  ]},
+  {group:'데이터', items:[
+    {id:'master-data', label:'마스터 데이터', ico:'▧', roles:['admin']}
+  ]},
+  {group:'시스템', items:[
+    {id:'access-control', label:'권한 관리', ico:'⚿', roles:['admin']},
+    {id:'roadmap', label:'연동 / 향후 확장', ico:'↗', roles:['admin']}
+  ]}
+];
+const PAGE_META = {
+  'exec-dashboard':['Executive Dashboard','EXECUTIVE · 경영 지표 개요'],
+  'ops-dashboard':['Operation Dashboard','OPERATION · 재공 / 지연 / 처리 현황'],
+  'quality-dashboard':['Quality Dashboard','QUALITY · 불량 및 검사 지표'],
+  'lifecycle-dashboard':['Parts Lifecycle Dashboard','SERIAL HISTORY · S/N 기반 생애주기 분석'],
+  'inout-list':['입출고 현황','LOGISTICS · 반입 / 반출 리스트'],
+  'event-log':['이벤트 로그','EVENTS · CD불량 / DEFECT / NPW / BM 이력'],
+  'analytics':['통합 분석 (Analytics)','PARETO · HEATMAP · TREND · MTBF · PM/BM · 작업자/장비/고객사/공정'],
+  'master-data':['마스터 데이터','MASTER · Customer / Equipment / Parts / Event / Inspection'],
+  'access-control':['권한 관리','RBAC · 역할별 화면 접근 제어'],
+  'roadmap':['연동 / 향후 확장','INTEGRATION ROADMAP · ERP · MES · Barcode · RFID · AI Vision']
+};
+
+function visibleCustomerFilter(){
+  return currentRole === 'customer' ? CUSTOMERS[0] : null;
+}
+function scopedCycles(){
+  const cf = visibleCustomerFilter();
+  return cf ? ALL_CYCLES.filter(c=>c.customer===cf) : ALL_CYCLES;
+}
+function scopedSerials(){
+  const cf = visibleCustomerFilter();
+  return cf ? SERIALS.filter(s=>s.customer===cf) : SERIALS;
+}
+
+function renderNav(){
+  const el = document.getElementById('navContainer');
+  el.innerHTML = NAV.map(g=>{
+    const items = g.items.filter(it=>it.roles.includes(currentRole));
+    if (!items.length) return '';
+    return `<div class="nav-group">
+      <div class="nav-group-label">${g.group}</div>
+      ${items.map(it=>`<div class="nav-item ${it.id===currentView?'active':''}" data-view="${it.id}">
+        <span class="ico">${it.ico}</span><span>${it.label}</span>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.nav-item').forEach(n=>{
+    n.addEventListener('click', ()=> switchView(n.dataset.view));
+  });
+}
+
+function switchView(viewId){
+  const allowed = NAV.flatMap(g=>g.items).find(it=>it.id===viewId);
+  if (allowed && !allowed.roles.includes(currentRole)) viewId = 'exec-dashboard';
+  if (typeof opsRefreshTimer !== 'undefined' && opsRefreshTimer && viewId !== 'ops-dashboard'){
+    clearInterval(opsRefreshTimer); opsRefreshTimer = null;
+  }
+  currentView = viewId;
+  document.getElementById('pageTitle').textContent = PAGE_META[viewId][0];
+  document.getElementById('pageSub').textContent = PAGE_META[viewId][1];
+  renderNav();
+  renderView(viewId);
+}
+
+/* ---------------------- 6. SMALL RENDER HELPERS ---------------------- */
+function issueBadge(issue){
+  const cls = {'정상':'normal','CD불량':'cd','DEFECT':'defect','NPW문제':'npw'}[issue] || 'neutral';
+  return `<span class="badge ${cls}"><span class="dot ${cls}"></span>${issue}</span>`;
+}
+function pmBadge(pm){ return `<span class="badge ${pm==='정기PM'?'pm':'bm'}">${pm}</span>`; }
+function cycleTypeBadge(ct){ return `<span class="badge ${ct==='정상사이클'?'full':'mid'}">${ct}</span>`; }
+function fmtNum(n){ return n.toLocaleString('ko-KR'); }
+
+function thisMonthCycles(cycles){
+  const now = new Date();
+  const key = monthKey(now);
+  return cycles.filter(c=>monthKey(c.outDateObj)===key);
+}
+function lastMonthCycles(cycles){
+  const d = new Date(); d.setMonth(d.getMonth()-1);
+  const key = monthKey(d);
+  return cycles.filter(c=>monthKey(c.outDateObj)===key);
+}
+
+/* ---------------------- 7. VIEW: EXECUTIVE DASHBOARD ---------------------- */
+function viewExecDashboard(){
+  const cycles = scopedCycles();
+  const serials = scopedSerials();
+  const thisM = thisMonthCycles(cycles);
+  const lastM = lastMonthCycles(cycles);
+  const dRate = defectRate(cycles);
+  const dRateLastM = defectRate(lastM);
+  const scrapCount = serials.filter(s=>s.retired).length;
+  const deltaShip = thisM.length - lastM.length;
+
+  // monthly trend (last 8 months)
+  const months = [];
+  const now = new Date();
+  for (let i=7;i>=0;i--){ const d=new Date(now); d.setMonth(d.getMonth()-i); months.push(monthKey(d)); }
+  const volByMonth = months.map(mk => cycles.filter(c=>monthKey(c.outDateObj)===mk).length);
+  const defectByMonth = months.map(mk => {
+    const mc = cycles.filter(c=>monthKey(c.outDateObj)===mk);
+    return mc.length ? Math.round(defectRate(mc)*1000)/10 : 0;
+  });
+
+  const custGroups = groupBy(cycles, c=>c.customer);
+  const custLabels = Object.keys(custGroups);
+  const custVols = custLabels.map(k=>custGroups[k].length);
+
+  const issueGroups = groupBy(cycles.filter(c=>c.issue!=='정상'), c=>c.issue);
+  const topIssues = Object.entries(issueGroups).sort((a,b)=>b[1].length-a[1].length);
+
+  document.getElementById('content').innerHTML = `
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--accent)"></div>
+        <div class="label">관리 중인 S/N</div><div class="value">${fmtNum(serials.length)}</div>
+        <div class="delta">Scrap 처리 ${scrapCount}건</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--accent-2)"></div>
+        <div class="label">이번달 반출 건수</div><div class="value">${fmtNum(thisM.length)}</div>
+        <div class="delta ${deltaShip>=0?'up':'down'}">${deltaShip>=0?'▲':'▼'} 전월 대비 ${Math.abs(deltaShip)}건</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--warn)"></div>
+        <div class="label">전체 불량률</div><div class="value">${pct(dRate)}</div>
+        <div class="delta ${dRate<=dRateLastM?'up':'down'}">전월 ${pct(dRateLastM)}</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--good)"></div>
+        <div class="label">누적 세정 사이클</div><div class="value">${fmtNum(cycles.length)}</div>
+        <div class="delta">평균 사용시간 ${Math.round(cycles.reduce((s,c)=>s+c.usageHours,0)/cycles.length)}h</div></div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">월별 처리량 &amp; 불량률 추이<span class="tag">RECENT 8M</span></div></div>
+        <div class="chart-wrap"><canvas id="chExecTrend"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">고객사별 처리 물량<span class="tag">SHARE</span></div></div>
+        <div class="chart-wrap"><canvas id="chExecCustomer"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid cols-2" style="margin-top:16px;">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Top 이슈 유형<span class="tag">이번 분기</span></div></div>
+        ${topIssues.length ? topIssues.map(([k,v])=>`
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            ${issueBadge(k)}
+            <div style="flex:1;background:var(--bg-2);border-radius:6px;height:8px;overflow:hidden;">
+              <div style="width:${(v.length/cycles.length*100).toFixed(1)}%;height:100%;background:var(--danger);"></div>
+            </div>
+            <div class="mono small-text">${v.length}건 (${pct(v.length/cycles.length)})</div>
+          </div>`).join('') : '<div class="empty-state small-text">이슈 데이터 없음</div>'}
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">최근 이벤트<span class="tag">LATEST 6</span></div></div>
+        <div class="table-scroll"><table><thead><tr><th>S/N</th><th>일자</th><th>이슈</th><th>공정</th><th>담당자</th></tr></thead><tbody>
+        ${[...cycles].sort((a,b)=>b.outDateObj-a.outDateObj).slice(0,6).map(c=>`
+          <tr><td class="mono sn-link" data-sn="${c.sn}">${c.sn}</td><td class="mono">${c.outDate}</td><td>${issueBadge(c.issue)}</td><td>${c.process}</td><td>${c.operator}</td></tr>
+        `).join('')}
+        </tbody></table></div>
+      </div>
+    </div>
+  `;
+  bindSnLinks();
+
+  makeChart('chExecTrend', {
+    type:'bar',
+    data:{ labels:months, datasets:[
+      {type:'bar', label:'처리 사이클 수', data:volByMonth, backgroundColor:'rgba(91,155,217,0.55)', borderRadius:4, order:2, yAxisID:'y'},
+      {type:'line', label:'불량률(%)', data:defectByMonth, borderColor:'#e2574c', backgroundColor:'#e2574c', tension:.35, order:1, yAxisID:'y1', pointRadius:3}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{
+        y:{ grid:{color:GRID_COLOR}, ticks:{font:CHART_FONT} },
+        y1:{ position:'right', grid:{display:false}, ticks:{font:CHART_FONT, callback:v=>v+'%'} },
+        x:{ grid:{display:false}, ticks:{font:CHART_FONT} }
+      },
+      plugins:{ legend:{labels:{boxWidth:10,font:{size:11}}} }
+    }
+  });
+
+  makeChart('chExecCustomer', {
+    type:'doughnut',
+    data:{ labels:custLabels, datasets:[{ data:custVols,
+      backgroundColor:['#5b9bd9','#6fd7c4','#e2a03f','#e2574c','#b79bee','#f0f0f0'] }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{boxWidth:10,font:{size:11}}}} }
+  });
+}
+
+/* ---------------------- 8. VIEW: OPERATION DASHBOARD (실시간 현황 + Factory Floor) ---------------------- */
+
+/* -- Live pipeline snapshot: simulated "현재 공정 중" 재공 파츠 목록 (실제 S/N 풀에서 추출) -- */
+let LIVE_PIPELINE = [];
+function generateLivePipeline(){
+  const stages = ['입고','세정중','Bake중','Coating중','배송중'];
+  const n = randInt(70,95);
+  const items = [];
+  for (let i=0;i<n;i++){
+    const s = pick(SERIALS);
+    const isDelayed = Math.random() < 0.06;
+    items.push({
+      sn:s.sn, customer:s.customer, maker:s.maker, process:s.process,
+      stage: isDelayed ? '지연중' : pick(stages),
+      delayed:isDelayed, bm: Math.random() < 0.14,
+      daysInStage: randInt(1,9)
+    });
+  }
+  return items;
+}
+LIVE_PIPELINE = generateLivePipeline();
+
+/* -- Factory floor stations -- */
+const STATIONS_BY_FACTORY = {
+  '1공장':[ {name:'Cleaning #1',type:'clean'}, {name:'Cleaning #2',type:'clean'}, {name:'Bake #1',type:'bake'}, {name:'Bake #2',type:'bake'}, {name:'Coating',type:'coat'} ],
+  '2공장':[ {name:'Cleaning #3',type:'clean'}, {name:'Cleaning #4',type:'clean'}, {name:'Bake #3',type:'bake'}, {name:'Inspection',type:'inspect'} ]
+};
+let STATION_STATE = {};
+function randomStationStatus(){
+  const r = Math.random();
+  if (r < 0.55) return 'running';
+  if (r < 0.8) return 'idle';
+  return 'waiting';
+}
+function refreshStationState(){
+  Object.values(STATIONS_BY_FACTORY).flat().forEach(st=>{ STATION_STATE[st.name] = randomStationStatus(); });
+}
+refreshStationState();
+const STATION_LABEL = {running:'Running', idle:'Idle', waiting:'Waiting'};
+
+function stationRowsHtml(factoryName){
+  return STATIONS_BY_FACTORY[factoryName].map(st=>{
+    const status = STATION_STATE[st.name] || 'idle';
+    return `<div class="station-row">
+      <div class="st-name">${st.name}</div>
+      <div class="station-status ${status}"><span class="sdot"></span>${STATION_LABEL[status]}</div>
+    </div>`;
+  }).join('');
+}
+function renderFactoryBoards(){
+  Object.keys(STATIONS_BY_FACTORY).forEach((f,idx)=>{
+    const el = document.getElementById('fb-'+idx);
+    if (el) el.innerHTML = stationRowsHtml(f);
+  });
+}
+
+let opsRefreshTimer = null;
+
+function miniBarsHtml(groupObj, colorVar){
+  const entries = Object.entries(groupObj).sort((a,b)=>b[1].length-a[1].length);
+  if (!entries.length) return '<div class="small-text">데이터 없음</div>';
+  const max = Math.max(1, ...entries.map(([,v])=>v.length));
+  return `<div class="minibar-list">${entries.map(([k,v])=>`
+    <div class="minibar-row">
+      <div class="mb-label">${k}</div>
+      <div class="mb-track"><div class="mb-fill" style="width:${(v.length/max*100).toFixed(0)}%;background:${colorVar};"></div></div>
+      <div class="mb-val">${v.length}</div>
+    </div>`).join('')}</div>`;
+}
+
+function viewOpsDashboard(){
+  const cycles = scopedCycles();
+  const cf = visibleCustomerFilter();
+  const pipeline = cf ? LIVE_PIPELINE.filter(p=>p.customer===cf) : LIVE_PIPELINE;
+
+  const shippedThisMonth = thisMonthCycles(cycles).length;
+  const inProgressCount = pipeline.filter(p=>!p.delayed).length;
+  const delayedCount = pipeline.filter(p=>p.delayed).length;
+  const bmCount = pipeline.filter(p=>p.bm).length;
+  const inboundTotal = pipeline.length + shippedThisMonth;
+
+  const avgTAT = (cycles.reduce((s,c)=>s+(c.outDateObj-c.inDateObj)/86400000,0)/cycles.length).toFixed(1);
+  const avgRecoatRate = pct(cycles.filter(c=>c.recoating).length/cycles.length);
+  const shipToday = Math.max(5, Math.round(shippedThisMonth/20));
+
+  const stageOrder = ['입고','세정중','Bake중','Coating중','배송중','지연중'];
+  const stageGroups = groupBy(pipeline, p=>p.stage);
+
+  const byCustomer = groupBy(pipeline, p=>p.customer);
+  const byMaker = groupBy(pipeline, p=>p.maker);
+  const byProcess = groupBy(pipeline, p=>p.process);
+
+  const byOperatorThisMonth = groupBy(thisMonthCycles(cycles), c=>c.operator);
+  const delayedHistory = cycles.filter(c=> (c.outDateObj - c.inDateObj)/86400000 > 7);
+
+  document.getElementById('content').innerHTML = `
+    <div class="section-note">
+      <span class="live-tag"><span class="live-dot"></span>LIVE SNAPSHOT</span>
+      &nbsp;— 아래 재공 현황/설비 가동 상태는 실시간 연동 전 데모용 시뮬레이션입니다. TAT·Recoating Rate는 실제 이력 데이터 기준입니다.
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--accent)"></div>
+        <div class="label">입고</div><div class="value">${fmtNum(inboundTotal)}</div><div class="delta">누적 접수 기준</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--accent-2)"></div>
+        <div class="label">진행중</div><div class="value">${fmtNum(inProgressCount)}</div><div class="delta">재공(在工) 파츠</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--good)"></div>
+        <div class="label">출고완료</div><div class="value">${fmtNum(shippedThisMonth)}</div><div class="delta">이번달 기준</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--warn)"></div>
+        <div class="label">긴급(BM)</div><div class="value">${fmtNum(bmCount)}</div><div class="delta">고장정비 유입</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--danger)"></div>
+        <div class="label">지연</div><div class="value">${fmtNum(delayedCount)}</div><div class="delta">즉시 확인 필요</div></div>
+    </div>
+
+    <div class="grid cols-3">
+      <div class="panel"><div class="panel-head"><div class="panel-title">고객사별 현황</div></div>${miniBarsHtml(byCustomer,'#5b9bd9')}</div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">장비사별 현황</div></div>${miniBarsHtml(byMaker,'#6fd7c4')}</div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">공정별 현황</div></div>${miniBarsHtml(byProcess,'#e2a03f')}</div>
+    </div>
+
+    <div class="panel" style="margin:16px 0;">
+      <div class="panel-head"><div class="panel-title">공정 단계별 재공 현황<span class="tag">입고 → 세정 → Bake → Coating → 배송 → 출고</span></div></div>
+      <div class="stage-flow">
+        ${stageOrder.map(s=>`<div class="stage-chip ${s==='지연중'&&(stageGroups[s]||[]).length>0?'alert':''}">
+          <div class="sc-n">${(stageGroups[s]||[]).length}</div><div class="sc-l">${s}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="stat-strip" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px;">
+      <div class="stat-box"><div class="sv">${shipToday} KIT</div><div class="sl">오늘 출하 예정</div></div>
+      <div class="stat-box"><div class="sv">${avgTAT} Day</div><div class="sl">평균 Turn Around Time</div></div>
+      <div class="stat-box"><div class="sv">${avgRecoatRate}</div><div class="sl">평균 Recoating Rate</div></div>
+    </div>
+
+    <div class="panel-head" style="margin-bottom:10px;">
+      <div class="panel-title">Factory Floor 현황<span class="tag">설비 가동 상태</span></div>
+      <div class="spacer"></div>
+      <span class="live-tag" style="margin-right:10px;"><span class="live-dot"></span>4초마다 자동 갱신</span>
+      <button class="btn small ghost" id="fbRefreshBtn">지금 새로고침</button>
+    </div>
+    <div class="grid cols-2" style="margin-bottom:16px;">
+      <div class="factory-board">
+        <div class="fb-head"><b>Factory 1</b></div>
+        <div id="fb-0">${stationRowsHtml('1공장')}</div>
+      </div>
+      <div class="factory-board">
+        <div class="fb-head"><b>Factory 2</b></div>
+        <div id="fb-1">${stationRowsHtml('2공장')}</div>
+      </div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">담당자별 이번달 처리 건수</div></div>
+        <div class="chart-wrap short"><canvas id="chOpsOperator"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">공장별 세정장비 가동 분포<span class="tag">누적 이력 기준</span></div></div>
+        <div class="chart-wrap short"><canvas id="chOpsEquip"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-head"><div class="panel-title">처리 소요일 7일 초과 이력<span class="tag">지연 케이스</span></div></div>
+      <div class="table-scroll"><table><thead><tr>
+        <th>S/N</th><th>고객사</th><th>공정</th><th>반입일</th><th>반출일</th><th>소요일</th><th>공장</th><th>담당자</th><th>이슈</th>
+      </tr></thead><tbody>
+      ${delayedHistory.slice(0,12).map(c=>`<tr>
+        <td class="mono sn-link" data-sn="${c.sn}">${c.sn}</td><td>${c.customer}</td><td>${c.process}</td>
+        <td class="mono">${c.inDate}</td><td class="mono">${c.outDate}</td>
+        <td class="mono">${Math.round((c.outDateObj-c.inDateObj)/86400000)}일</td>
+        <td>${c.factory}</td><td>${c.operator}</td><td>${issueBadge(c.issue)}</td>
+      </tr>`).join('') || '<tr><td colspan="9" class="small-text" style="text-align:center;">지연 이력 없음</td></tr>'}
+      </tbody></table></div>
+    </div>
+  `;
+  bindSnLinks();
+  document.getElementById('fbRefreshBtn').addEventListener('click', ()=>{ refreshStationState(); renderFactoryBoards(); });
+  if (opsRefreshTimer) clearInterval(opsRefreshTimer);
+  opsRefreshTimer = setInterval(()=>{ refreshStationState(); renderFactoryBoards(); }, 4000);
+
+  const opLabels = Object.keys(byOperatorThisMonth);
+  makeChart('chOpsOperator', {
+    type:'bar',
+    data:{ labels:opLabels, datasets:[{ label:'처리 건수', data:opLabels.map(k=>byOperatorThisMonth[k].length),
+      backgroundColor:'rgba(111,215,196,0.6)', borderRadius:5 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{grid:{color:GRID_COLOR},ticks:{font:CHART_FONT}}, x:{grid:{display:false},ticks:{font:CHART_FONT}} } }
+  });
+
+  const equipGroups = groupBy(cycles, c=>c.factory+' · '+c.equip);
+  const eqLabels = Object.keys(equipGroups);
+  makeChart('chOpsEquip', {
+    type:'bar',
+    data:{ labels:eqLabels, datasets:[{ label:'가동 건수', data:eqLabels.map(k=>equipGroups[k].length),
+      backgroundColor:'rgba(91,155,217,0.55)', borderRadius:5 }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:GRID_COLOR},ticks:{font:CHART_FONT}}, y:{grid:{display:false},ticks:{font:CHART_FONT}} } }
+  });
+}
+
+/* ---------------------- 9. VIEW: QUALITY DASHBOARD ---------------------- */
+function viewQualityDashboard(){
+  const cycles = scopedCycles();
+  const dRate = defectRate(cycles);
+  const pmCycles = cycles.filter(c=>c.pmType==='정기PM');
+  const bmCycles = cycles.filter(c=>c.pmType==='BM');
+  const byProcess = groupBy(cycles, c=>c.process);
+  const byInspector = groupBy(cycles, c=>c.inspectorOut);
+
+  document.getElementById('content').innerHTML = `
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--danger)"></div>
+        <div class="label">전체 불량률</div><div class="value">${pct(dRate)}</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--accent)"></div>
+        <div class="label">정기PM 불량률</div><div class="value">${pct(defectRate(pmCycles))}</div>
+        <div class="delta">${fmtNum(pmCycles.length)}건 중</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--warn)"></div>
+        <div class="label">BM 불량률</div><div class="value">${pct(defectRate(bmCycles))}</div>
+        <div class="delta">${fmtNum(bmCycles.length)}건 중</div></div>
+      <div class="kpi-card"><div class="bar-accent" style="background:var(--good)"></div>
+        <div class="label">정상 완료율</div><div class="value">${pct(1-dRate)}</div></div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">이슈 유형 Pareto</div></div>
+        <div class="chart-wrap"><canvas id="chQualPareto"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">공정별 불량률</div></div>
+        <div class="chart-wrap"><canvas id="chQualProcess"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-head"><div class="panel-title">검사자별 불량 검출 현황<span class="tag">출고검사 기준</span></div></div>
+      <div class="table-scroll"><table><thead><tr><th>검사자</th><th>검사 건수</th><th>불량 검출</th><th>검출율</th></tr></thead><tbody>
+      ${Object.entries(byInspector).map(([name,arr])=>{
+        const bad = arr.filter(c=>c.issue!=='정상').length;
+        return `<tr><td>${name}</td><td class="mono">${arr.length}</td><td class="mono">${bad}</td><td class="mono">${pct(bad/arr.length)}</td></tr>`;
+      }).join('')}
+      </tbody></table></div>
+    </div>
+  `;
+
+  const issueGroups = groupBy(cycles, c=>c.issue);
+  const paretoOrder = Object.entries(issueGroups).sort((a,b)=>b[1].length-a[1].length).filter(([k])=>k!=='정상');
+  let cum = 0; const totalBad = paretoOrder.reduce((s,[,v])=>s+v.length,0);
+  const cumPct = paretoOrder.map(([,v])=>{ cum+=v.length; return Math.round(cum/totalBad*1000)/10; });
+  makeChart('chQualPareto', {
+    data:{ labels:paretoOrder.map(([k])=>k), datasets:[
+      {type:'bar', label:'건수', data:paretoOrder.map(([,v])=>v.length), backgroundColor:'rgba(226,87,76,0.6)', borderRadius:4, yAxisID:'y'},
+      {type:'line', label:'누적 %', data:cumPct, borderColor:'#e2a03f', backgroundColor:'#e2a03f', yAxisID:'y1', tension:.3, pointRadius:3}
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      scales:{ y:{grid:{color:GRID_COLOR},ticks:{font:CHART_FONT}}, y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{font:CHART_FONT,callback:v=>v+'%'}}, x:{grid:{display:false},ticks:{font:CHART_FONT}} },
+      plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}}
+    }
+  });
+
+  const procLabels = Object.keys(byProcess);
+  makeChart('chQualProcess', {
+    type:'bar',
+    data:{ labels:procLabels, datasets:[{label:'불량률(%)', data:procLabels.map(k=>Math.round(defectRate(byProcess[k])*1000)/10), backgroundColor:'rgba(226,160,63,0.6)', borderRadius:5}]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{grid:{color:GRID_COLOR},ticks:{font:CHART_FONT,callback:v=>v+'%'}}, x:{grid:{display:false},ticks:{font:CHART_FONT}} } }
+  });
+}
+
+/* ---------------------- 10. VIEW: PARTS LIFECYCLE DASHBOARD (핵심 기능) ---------------------- */
+let selectedSN = null;
+
+function viewLifecycleDashboard(){
+  const serials = scopedSerials();
+  if (!selectedSN || !serials.find(s=>s.sn===selectedSN)){
+    selectedSN = serials.length ? serials[Math.floor(serials.length/2)].sn : null;
+  }
+  document.getElementById('content').innerHTML = `
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-head">
+        <div class="panel-title">S/N 이력 조회<span class="tag">시리얼 번호를 입력하면 전체 생애주기가 표시됩니다</span></div>
+      </div>
+      <div class="filters">
+        <select id="lcSnSelect" style="min-width:220px;"></select>
+        <span class="small-text" style="align-self:center;">또는 상단 검색창에서 S/N 직접 입력</span>
+      </div>
+    </div>
+    <div id="lcDetail"></div>
+  `;
+  const sel = document.getElementById('lcSnSelect');
+  sel.innerHTML = serials.map(s=>`<option value="${s.sn}" ${s.sn===selectedSN?'selected':''}>${s.sn} · ${s.kit} · ${s.customer}</option>`).join('');
+  sel.addEventListener('change', ()=>{ selectedSN = sel.value; renderLifecycleDetail(); });
+  renderLifecycleDetail();
+}
+
+function renderLifecycleDetail(){
+  const box = document.getElementById('lcDetail');
+  if (!selectedSN){ box.innerHTML = '<div class="empty-state"><div class="big">—</div>조회 가능한 시리얼이 없습니다.</div>'; return; }
+  const serial = SERIALS.find(s=>s.sn===selectedSN);
+  const stats = serialStats(serial);
+  const remain = aiRemainingLife(serial);
+  const recoat = aiRecoatingRecommendation(serial);
+  const scrap = aiScrapRecommendation(serial);
+  const golden = aiGoldenParts(serial.kit);
+  const isGolden = golden && golden.sn === serial.sn;
+
+  box.innerHTML = `
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-head">
+        <div class="panel-title mono" style="font-size:15px;">${serial.sn}
+          ${serial.retired ? '<span class="badge defect" style="margin-left:8px;">SCRAP</span>' : '<span class="badge normal" style="margin-left:8px;">가동중</span>'}
+          ${isGolden ? '<span class="badge pm" style="margin-left:6px;">★ GOLDEN PARTS</span>' : ''}
+        </div>
+        <div class="spacer"></div>
+        <button class="btn small ghost" id="lcExportBtn">이력 CSV 내보내기</button>
+      </div>
+      <div class="grid cols-3" style="margin-bottom:16px;">
+        <div class="small-text">PARTS KIT<br><b style="color:var(--text);font-size:13px;">${serial.kit}${serial.coatedKit?' (코팅)':' (비코팅)'}</b></div>
+        <div class="small-text">고객사 / 공정<br><b style="color:var(--text);font-size:13px;">${serial.customer} · ${serial.process} (${serial.gas})</b></div>
+        <div class="small-text">장비사 / 호기 / 챔버<br><b style="color:var(--text);font-size:13px;">${serial.maker} · ${serial.toolId} · ${serial.chamber}</b></div>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-box"><div class="sv">${stats.total}</div><div class="sl">총 세정 횟수</div></div>
+        <div class="stat-box"><div class="sv">${stats.recoatCount}</div><div class="sl">총 Recoating 횟수</div></div>
+        <div class="stat-box"><div class="sv">${stats.fullTime}/${stats.total}</div><div class="sl">정상 Full-cycle 완료</div></div>
+        <div class="stat-box"><div class="sv">${stats.avgUsage}h</div><div class="sl">평균 사용시간/사이클</div></div>
+        <div class="stat-box"><div class="sv" style="color:${stats.dRate>0.3?'var(--danger)':'var(--good)'}">${pct(stats.dRate)}</div><div class="sl">누적 불량률</div></div>
+      </div>
+
+      <div class="panel-head" style="margin-top:4px;"><div class="panel-title">전체 생애주기 타임라인<span class="tag">반입→세정→검사→반출, 클릭하여 상세 확인</span></div></div>
+      <div class="timeline" id="lcTimeline">
+        ${serial.cycles.map((c,idx)=>{
+          const cls = {'정상':'normal','CD불량':'cd','DEFECT':'defect','NPW문제':'npw'}[c.issue];
+          return `<div class="tl-step ${cls} ${idx===serial.cycles.length-1?'sel':''}" data-idx="${idx}">
+            <div class="cyc">CYCLE ${c.cycleNo}</div>
+            <div class="st">${c.issue}</div>
+            <div class="dt">${c.inDate}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div id="lcCycleDetail"></div>
+    </div>
+
+    <div class="grid cols-2" style="margin-bottom:16px;">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Best vs Worst 조건 비교</div></div>
+        <div class="compare-grid">
+          <div class="compare-card best">
+            <div class="cc-label">✓ Best Cycle (Cycle ${stats.best.cycleNo})</div>
+            <div class="cc-row"><span>사용시간</span><b>${stats.best.usageHours}h</b></div>
+            <div class="cc-row"><span>세정공장/장비</span><b>${stats.best.factory} · ${stats.best.equip}</b></div>
+            <div class="cc-row"><span>세정담당자</span><b>${stats.best.operator}</b></div>
+            <div class="cc-row"><span>PM유형</span><b>${stats.best.pmType}</b></div>
+            <div class="cc-row"><span>사이클구분</span><b>${stats.best.cycleType}</b></div>
+          </div>
+          <div class="compare-card worst">
+            <div class="cc-label">⚠ Worst Cycle (Cycle ${stats.worst.cycleNo})</div>
+            <div class="cc-row"><span>사용시간</span><b>${stats.worst.usageHours}h</b></div>
+            <div class="cc-row"><span>세정공장/장비</span><b>${stats.worst.factory} · ${stats.worst.equip}</b></div>
+            <div class="cc-row"><span>세정담당자</span><b>${stats.worst.operator}</b></div>
+            <div class="cc-row"><span>이슈</span><b>${stats.worst.issue}</b></div>
+            <div class="cc-row"><span>조치</span><b>${stats.worst.action}</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">AI 인사이트<span class="tag">Rule-based Analysis</span></div></div>
+        <div class="insight-card info">
+          <div class="ic-icon">⏳</div>
+          <div class="ic-body"><div class="ic-title">잔존 수명 예측 (Remaining Life)</div>
+          <div class="ic-desc">동일 파츠군(${serial.kit}) 평균 ${remain.cohortAvg}회 사용 대비, 현재 ${stats.total}회 사용됨.
+          예상 잔여 <b style="color:var(--accent)">${remain.remainCycles}회 (약 ${fmtNum(remain.remainHours)}h)</b> 사용 가능.</div></div>
+        </div>
+        <div class="insight-card ${recoat.need?'warn':'good'}">
+          <div class="ic-icon">${recoat.need?'⟳':'✓'}</div>
+          <div class="ic-body"><div class="ic-title">Recoating 권장 여부</div><div class="ic-desc">${recoat.reason}</div></div>
+        </div>
+        <div class="insight-card ${scrap.need?'danger':'good'}">
+          <div class="ic-icon">${scrap.need?'☠':'✓'}</div>
+          <div class="ic-body"><div class="ic-title">Scrap 권장 여부</div><div class="ic-desc">${scrap.reason}</div></div>
+        </div>
+        ${golden ? `<div class="insight-card good">
+          <div class="ic-icon">★</div>
+          <div class="ic-body"><div class="ic-title">Golden Parts 비교</div>
+          <div class="ic-desc">동일 파츠군 최고 성능 기준은 <b class="mono sn-link" data-sn="${golden.sn}">${golden.sn}</b> (평균 ${serialStats(golden).avgUsage}h/cycle, 불량률 ${pct(serialStats(golden).dRate)}).
+          ${isGolden ? '현재 파츠가 바로 그 기준입니다.' : `현재 파츠는 평균 사용시간 ${stats.avgUsage}h, 불량률 ${pct(stats.dRate)}로 ${stats.avgUsage>=serialStats(golden).avgUsage?'유사한':'다소 낮은'} 성능입니다.`}</div></div>
+        </div>` : ''}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">전체 이력 상세<span class="tag">${stats.total} CYCLES</span></div></div>
+      <div class="table-scroll"><table><thead><tr>
+        <th>Cycle</th><th>반입일</th><th>반출일</th><th>공장</th><th>세정장비</th><th>담당자</th><th>입고검사</th><th>출고검사</th>
+        <th>PM유형</th><th>사이클</th><th>코팅</th><th>Recoat</th><th>이슈</th><th>사용시간</th><th>조치</th>
+      </tr></thead><tbody>
+      ${serial.cycles.map(c=>`<tr>
+        <td class="mono">${c.cycleNo}</td><td class="mono">${c.inDate}</td><td class="mono">${c.outDate}</td>
+        <td>${c.factory}</td><td>${c.equip}</td><td>${c.operator}</td><td>${c.inspectorIn}</td><td>${c.inspectorOut}</td>
+        <td>${pmBadge(c.pmType)}</td><td>${cycleTypeBadge(c.cycleType)}</td>
+        <td>${c.coated?'O':'-'}</td><td>${c.recoating?'O':'-'}</td>
+        <td>${issueBadge(c.issue)}</td><td class="mono">${c.usageHours}h</td><td>${c.action}</td>
+      </tr>`).join('')}
+      </tbody></table></div>
+    </div>
+  `;
+
+  document.querySelectorAll('#lcTimeline .tl-step').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('#lcTimeline .tl-step').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+      const c = serial.cycles[+el.dataset.idx];
+      document.getElementById('lcCycleDetail').innerHTML = `
+        <div class="panel" style="margin-top:10px;background:var(--bg-2);">
+          <div class="grid cols-3">
+            <div class="small-text">반입 → 반출<br><b style="color:var(--text)" class="mono">${c.inDate} → ${c.outDate}</b></div>
+            <div class="small-text">세정<br><b style="color:var(--text)">${c.factory} · ${c.equip} · 담당 ${c.operator}</b></div>
+            <div class="small-text">검사<br><b style="color:var(--text)">입고 ${c.inspectorIn} / 출고 ${c.inspectorOut}</b></div>
+            <div class="small-text">정비유형<br>${pmBadge(c.pmType)}</div>
+            <div class="small-text">사이클구분<br>${cycleTypeBadge(c.cycleType)}</div>
+            <div class="small-text">코팅 / Recoating<br><b style="color:var(--text)">${c.coated?'코팅 파츠':'비코팅'} / ${c.recoating?'Recoating 진행':'미진행'}</b></div>
+          </div>
+          <div style="margin-top:10px;" class="small-text">이슈: ${issueBadge(c.issue)} &nbsp;·&nbsp; 조치내용: <b style="color:var(--text)">${c.action}</b> &nbsp;·&nbsp; 사용시간: <b class="mono" style="color:var(--text)">${c.usageHours}h</b></div>
+        </div>`;
+    });
+  });
+  document.getElementById('lcExportBtn').addEventListener('click', ()=> exportCyclesToCSV(serial.cycles, `${serial.sn}_history.csv`));
+  bindSnLinks();
+}
+
+/* ---------------------- 11. VIEW: 입출고 현황 ---------------------- */
+let inoutFilters = {};
+function viewInoutList(){
+  const allCycles = scopedCycles();
+  document.getElementById('content').innerHTML = `
+    <div class="panel">
+      <div class="filters">
+        <select id="fCustomer"><option value="">전체 고객사</option>${CUSTOMERS.map(c=>`<option>${c}</option>`).join('')}</select>
+        <select id="fProcess"><option value="">전체 공정</option>${PROCESSES.map(c=>`<option>${c}</option>`).join('')}</select>
+        <select id="fMaker"><option value="">전체 장비사</option>${MAKERS.map(c=>`<option>${c}</option>`).join('')}</select>
+        <select id="fFactory"><option value="">전체 공장</option>${FACTORIES.map(c=>`<option>${c}</option>`).join('')}</select>
+        <select id="fIssue"><option value="">전체 이슈</option>${ISSUE_TYPES.map(c=>`<option>${c}</option>`).join('')}</select>
+        <span class="clear" id="fClear">필터 초기화</span>
+        <div class="spacer" style="flex:1"></div>
+        <button class="btn small ghost" id="ioExportBtn">CSV 내보내기</button>
+      </div>
+      <div class="small-text" id="ioCount" style="margin-bottom:8px;"></div>
+      <div class="table-scroll"><table><thead><tr>
+        <th>S/N</th><th>고객사</th><th>공정</th><th>호기/챔버</th><th>장비사</th><th>PARTS KIT</th>
+        <th>반입일</th><th>반출일</th><th>공장</th><th>세정장비</th><th>담당자</th><th>PM</th><th>사이클</th><th>이슈</th>
+      </tr></thead><tbody id="ioBody"></tbody></table></div>
+    </div>
+  `;
+  ['fCustomer','fProcess','fMaker','fFactory','fIssue'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', renderInoutTable);
+  });
+  document.getElementById('fClear').addEventListener('click', ()=>{
+    ['fCustomer','fProcess','fMaker','fFactory','fIssue'].forEach(id=>document.getElementById(id).value='');
+    renderInoutTable();
+  });
+  document.getElementById('ioExportBtn').addEventListener('click', ()=>{
+    exportCyclesToCSV(filteredInoutCycles(), 'inout_export.csv');
+  });
+  renderInoutTable();
+
+  function filteredInoutCycles(){
+    const fc = document.getElementById('fCustomer').value;
+    const fp = document.getElementById('fProcess').value;
+    const fm = document.getElementById('fMaker').value;
+    const ff = document.getElementById('fFactory').value;
+    const fi = document.getElementById('fIssue').value;
+    return [...allCycles].sort((a,b)=>b.outDateObj-a.outDateObj).filter(c=>
+      (!fc||c.customer===fc) && (!fp||c.process===fp) && (!fm||c.maker===fm) && (!ff||c.factory===ff) && (!fi||c.issue===fi)
+    );
+  }
+  window.__filteredInout = filteredInoutCycles;
+  function renderInoutTable(){
+    const rows = filteredInoutCycles();
+    document.getElementById('ioCount').textContent = `총 ${rows.length}건`;
+    document.getElementById('ioBody').innerHTML = rows.slice(0,150).map(c=>`
+      <tr><td class="mono sn-link" data-sn="${c.sn}">${c.sn}</td><td>${c.customer}</td><td>${c.process} (${c.gas})</td>
+      <td class="mono">${c.toolId}/${c.chamber}</td><td>${c.maker}</td><td>${c.kit}</td>
+      <td class="mono">${c.inDate}</td><td class="mono">${c.outDate}</td><td>${c.factory}</td><td>${c.equip}</td>
+      <td>${c.operator}</td><td>${pmBadge(c.pmType)}</td><td>${cycleTypeBadge(c.cycleType)}</td><td>${issueBadge(c.issue)}</td></tr>
+    `).join('');
+    bindSnLinks();
+  }
+}
+
+function exportCyclesToCSV(cycles, filename){
+  const headers = ['S/N','고객사','공정','가스/막질','호기','챔버','장비사','PARTS KIT','반입일','반출일','공장','세정장비','담당자','입고검사','출고검사','PM유형','사이클구분','코팅','Recoating','이슈','사용시간(h)','조치내용'];
+  const rows = cycles.map(c=>[c.sn,c.customer,c.process,c.gas,c.toolId,c.chamber,c.maker,c.kit,c.inDate,c.outDate,c.factory,c.equip,c.operator,c.inspectorIn,c.inspectorOut,c.pmType,c.cycleType,c.coated?'Y':'N',c.recoating?'Y':'N',c.issue,c.usageHours,c.action]);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------------- 12. VIEW: 이벤트 로그 ---------------------- */
+function viewEventLog(){
+  const cycles = scopedCycles().filter(c=>c.issue!=='정상' || c.pmType==='BM');
+  const sorted = [...cycles].sort((a,b)=>b.outDateObj-a.outDateObj);
+  document.getElementById('content').innerHTML = `
+    <div class="section-note">CD불량 / DEFECT / NPW문제 / BM(고장정비) 이벤트만 모아 보여줍니다. 반복 발생 여부를 빠르게 확인하는 용도입니다.</div>
+    <div class="panel">
+      <div class="table-scroll"><table><thead><tr>
+        <th>S/N</th><th>발생일</th><th>고객사</th><th>공정/장비사</th><th>PM유형</th><th>이슈</th><th>세정장비</th><th>담당자</th><th>조치내용</th>
+      </tr></thead><tbody>
+      ${sorted.slice(0,200).map(c=>`<tr>
+        <td class="mono sn-link" data-sn="${c.sn}">${c.sn}</td><td class="mono">${c.outDate}</td><td>${c.customer}</td>
+        <td>${c.process} · ${c.maker}</td><td>${pmBadge(c.pmType)}</td><td>${issueBadge(c.issue)}</td>
+        <td>${c.equip}</td><td>${c.operator}</td><td>${c.action}</td>
+      </tr>`).join('')}
+      </tbody></table></div>
+    </div>
+  `;
+  bindSnLinks();
+}
+
+/* ---------------------- 13. VIEW: ANALYTICS (통합 분석) ---------------------- */
+const ANALYTICS_TABS = [
+  {id:'pareto', label:'Pareto'},
+  {id:'heatmap', label:'Heat Map'},
+  {id:'trend', label:'Trend'},
+  {id:'mtbf', label:'MTBF'},
+  {id:'pmbm', label:'PM/BM 비교'},
+  {id:'operator', label:'작업자 분석'},
+  {id:'equip', label:'장비 분석'},
+  {id:'customer', label:'고객사 분석'},
+  {id:'process', label:'공정 분석'}
+];
+let analyticsTab = 'pareto';
+let heatmapMode = 'micro'; // micro = 챔버 단위, macro = 장비사 단위
+
+function viewAnalytics(){
+  document.getElementById('content').innerHTML = `
+    <div class="tabs" id="analyticsTabs">
+      ${ANALYTICS_TABS.map(t=>`<button class="tab-btn ${t.id===analyticsTab?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+    </div>
+    <div id="analyticsBody"></div>
+  `;
+  document.querySelectorAll('#analyticsTabs .tab-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{ analyticsTab = b.dataset.tab; viewAnalytics(); });
+  });
+  renderAnalyticsTab(analyticsTab);
+}
+
+function barChartConfig(labels, data, label, color, horizontal){
+  return {
+    type:'bar',
+    data:{labels, datasets:[{label, data, backgroundColor:color, borderRadius:5}]},
+    options:{
+      indexAxis: horizontal?'y':'x',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales: horizontal
+        ? { x:{grid:{color:GRID_COLOR},ticks:{font:CHART_FONT}}, y:{grid:{display:false},ticks:{font:CHART_FONT}} }
+        : { y:{grid:{color:GRID_COLOR},ticks:{font:CHART_FONT}}, x:{grid:{display:false},ticks:{font:CHART_FONT}} }
+    }
+  };
+}
+
+function renderAnalyticsTab(tab){
+  const body = document.getElementById('analyticsBody');
+  const cycles = scopedCycles();
+
+  if (tab==='pareto'){
+    body.innerHTML = `<div class="panel"><div class="panel-head"><div class="panel-title">이슈 유형 Pareto 분석<span class="tag">불량 원인의 80/20 구간 파악</span></div></div>
+      <div class="chart-wrap"><canvas id="anChart"></canvas></div></div>`;
+    const gb = groupBy(cycles.filter(c=>c.issue!=='정상'), c=>c.issue);
+    const order = Object.entries(gb).sort((a,b)=>b[1].length-a[1].length);
+    const total = order.reduce((s,[,v])=>s+v.length,0);
+    let cum=0; const cumPct = order.map(([,v])=>{cum+=v.length; return Math.round(cum/total*1000)/10;});
+    makeChart('anChart', { data:{ labels:order.map(([k])=>k), datasets:[
+      {type:'bar', label:'건수', data:order.map(([,v])=>v.length), backgroundColor:'rgba(226,87,76,.6)', borderRadius:4, yAxisID:'y'},
+      {type:'line', label:'누적 %', data:cumPct, borderColor:'#e2a03f', yAxisID:'y1', tension:.3, pointRadius:3}
+    ]}, options:{ responsive:true, maintainAspectRatio:false,
+      scales:{ y:{grid:{color:GRID_COLOR},ticks:{font:CHART_FONT}}, y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{font:CHART_FONT,callback:v=>v+'%'}}, x:{grid:{display:false},ticks:{font:CHART_FONT}} },
+      plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}} } });
+  }
+
+  else if (tab==='heatmap'){
+    body.innerHTML = `<div class="panel">
+      <div class="panel-head"><div class="panel-title">불량률 Heat Map</div>
+        <div class="spacer"></div>
+        <div class="pill-toggle">
+          <button data-m="micro" class="${heatmapMode==='micro'?'active':''}">세부 (챔버 단위)</button>
+          <button data-m="macro" class="${heatmapMode==='macro'?'active':''}">그룹 (장비사 단위)</button>
+        </div>
+      </div>
+      <div class="section-note">행: 세정장비 · 열: ${heatmapMode==='micro'?'공정+챔버 (세부 영역)':'장비사 (대분류 그룹)'}. 색이 진할수록 불량률이 높습니다.</div>
+      <div id="heatArea"></div>
+    </div>`;
+    document.querySelectorAll('#analyticsBody .pill-toggle button').forEach(b=>{
+      b.addEventListener('click', ()=>{ heatmapMode=b.dataset.m; renderAnalyticsTab('heatmap'); });
+    });
+    renderHeatmap(cycles);
+  }
+
+  else if (tab==='trend'){
+    body.innerHTML = `<div class="panel"><div class="panel-head"><div class="panel-title">월별 처리량 / 불량 건수 Trend</div></div>
+      <div class="chart-wrap"><canvas id="anChart"></canvas></div></div>`;
+    const months = [];
+    const dates = cycles.map(c=>c.outDateObj);
+    const minD = new Date(Math.min(...dates)), maxD = new Date(Math.max(...dates));
+    let cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
+    while (cur <= maxD){ months.push(monthKey(cur)); cur.setMonth(cur.getMonth()+1); }
+    const vol = months.map(mk=>cycles.filter(c=>monthKey(c.outDateObj)===mk).length);
+    const bad = months.map(mk=>cycles.filter(c=>monthKey(c.outDateObj)===mk && c.issue!=='정상').length);
+    makeChart('anChart', { type:'line', data:{ labels:months, datasets:[
+      {label:'전체 처리', data:vol, borderColor:'#5b9bd9', backgroundColor:'rgba(91,155,217,.15)', fill:true, tension:.3},
+      {label:'불량 발생', data:bad, borderColor:'#e2574c', backgroundColor:'rgba(226,87,76,.15)', fill:true, tension:.3}
+    ]}, options:{ responsive:true, maintainAspectRatio:false,
+      scales:{ y:{grid:{color:GRID_COLOR},ticks:{font:CHART_FONT}}, x:{grid:{display:false},ticks:{font:CHART_FONT}} },
+      plugins:{legend:{labels:{boxWidth:10,font:{size:11}}}} } });
+  }
+
+  else if (tab==='mtbf'){
+    body.innerHTML = `<div class="panel"><div class="panel-head"><div class="panel-title">MTBF (Mean Time/Cycles Between Failure)<span class="tag">PARTS KIT 기준</span></div></div>
+      <div class="chart-wrap"><canvas id="anChart"></canvas></div>
+      <div class="section-note">동일 파츠 내에서 불량(비정상 이슈) 발생 사이클 사이의 평균 사용시간(h)입니다. 값이 클수록 안정적입니다.</div>
+      </div>`;
+    const kitNames = PART_KITS.map(k=>k.name);
+    const mtbfVals = kitNames.map(kn=>{
+      let gaps = [];
+      cohortFor(kn).forEach(s=>{
+        let acc = 0;
+        s.cycles.forEach(c=>{
+          acc += c.usageHours;
+          if (c.issue!=='정상'){ gaps.push(acc); acc = 0; }
+        });
+      });
+      return gaps.length ? Math.round(gaps.reduce((a,b)=>a+b,0)/gaps.length) : 0;
+    });
+    makeChart('anChart', barChartConfig(kitNames, mtbfVals, 'MTBF (h)', 'rgba(111,215,196,.6)', true));
+  }
+
+  else if (tab==='pmbm'){
+    const pmC = cycles.filter(c=>c.pmType==='정기PM'), bmC = cycles.filter(c=>c.pmType==='BM');
+    body.innerHTML = `<div class="grid cols-2">
+      <div class="panel"><div class="panel-head"><div class="panel-title">평균 사용시간 비교</div></div><div class="chart-wrap short"><canvas id="anChart1"></canvas></div></div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">불량률 비교</div></div><div class="chart-wrap short"><canvas id="anChart2"></canvas></div></div>
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <div class="stat-strip" style="grid-template-columns:repeat(4,1fr);">
+        <div class="stat-box"><div class="sv">${pmC.length}</div><div class="sl">정기PM 건수</div></div>
+        <div class="stat-box"><div class="sv">${bmC.length}</div><div class="sl">BM 건수</div></div>
+        <div class="stat-box"><div class="sv">${pct(defectRate(pmC))}</div><div class="sl">정기PM 불량률</div></div>
+        <div class="stat-box"><div class="sv" style="color:var(--danger)">${pct(defectRate(bmC))}</div><div class="sl">BM 불량률</div></div>
+      </div>
+    </div>`;
+    makeChart('anChart1', barChartConfig(['정기PM','BM'], [Math.round(pmC.reduce((s,c)=>s+c.usageHours,0)/pmC.length), Math.round(bmC.reduce((s,c)=>s+c.usageHours,0)/bmC.length)], '평균 사용시간(h)', 'rgba(91,155,217,.6)'));
+    makeChart('anChart2', barChartConfig(['정기PM','BM'], [Math.round(defectRate(pmC)*1000)/10, Math.round(defectRate(bmC)*1000)/10], '불량률(%)', 'rgba(226,87,76,.6)'));
+  }
+
+  else if (tab==='operator' || tab==='equip' || tab==='customer' || tab==='process'){
+    const keyFn = {
+      operator: c=>c.operator,
+      equip: c=>c.factory+' · '+c.equip,
+      customer: c=>c.customer,
+      process: c=>c.process
+    }[tab];
+    const titleMap = {operator:'세정담당자별 분석', equip:'세정장비별 분석', customer:'고객사별 분석', process:'공정별 분석'};
+    const gb = groupBy(cycles, keyFn);
+    const labels = Object.keys(gb);
+    const rates = labels.map(k=>Math.round(defectRate(gb[k])*1000)/10);
+    const vols = labels.map(k=>gb[k].length);
+    body.innerHTML = `<div class="grid cols-2">
+      <div class="panel"><div class="panel-head"><div class="panel-title">${titleMap[tab]} — 불량률(%)</div></div><div class="chart-wrap"><canvas id="anChart1"></canvas></div></div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">${titleMap[tab]} — 처리 물량</div></div><div class="chart-wrap"><canvas id="anChart2"></canvas></div></div>
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <div class="table-scroll"><table><thead><tr><th>구분</th><th>처리 건수</th><th>불량 건수</th><th>불량률</th><th>평균 사용시간</th></tr></thead><tbody>
+      ${labels.map(k=>{
+        const arr = gb[k]; const bad = arr.filter(c=>c.issue!=='정상').length;
+        const avgU = Math.round(arr.reduce((s,c)=>s+c.usageHours,0)/arr.length);
+        return `<tr><td>${k}</td><td class="mono">${arr.length}</td><td class="mono">${bad}</td><td class="mono">${pct(bad/arr.length)}</td><td class="mono">${avgU}h</td></tr>`;
+      }).join('')}
+      </tbody></table></div>
+    </div>`;
+    makeChart('anChart1', barChartConfig(labels, rates, '불량률(%)', 'rgba(226,87,76,.6)', true));
+    makeChart('anChart2', barChartConfig(labels, vols, '처리 건수', 'rgba(91,155,217,.6)', true));
+  }
+}
+
+function renderHeatmap(cycles){
+  const rows = CLEAN_EQUIP;
+  const cols = heatmapMode==='micro'
+    ? [...new Set(cycles.map(c=>c.process+' '+c.chamber))].sort()
+    : MAKERS;
+  const colFn = heatmapMode==='micro' ? (c=>c.process+' '+c.chamber) : (c=>c.maker);
+  const area = document.getElementById('heatArea');
+  let html = `<div class="heat-grid" style="grid-template-columns:90px repeat(${cols.length},1fr);">`;
+  html += `<div></div>` + cols.map(c=>`<div class="heat-col-label">${c}</div>`).join('');
+  rows.forEach(r=>{
+    html += `<div class="heat-row-label">${r}</div>`;
+    cols.forEach(c=>{
+      const subset = cycles.filter(cy=>cy.equip===r && colFn(cy)===c);
+      const rate = subset.length ? defectRate(subset) : null;
+      const bg = rate===null ? '#1a2233' : heatColor(rate);
+      html += `<div class="heat-cell" style="background:${bg};" title="${r} / ${c}: ${subset.length}건">${rate===null?'-':Math.round(rate*100)+'%'}</div>`;
+    });
+  });
+  html += `</div>`;
+  area.innerHTML = html;
+}
+function heatColor(rate){
+  // green -> amber -> red scale
+  const stops = [
+    {t:0, c:[76,175,130]},
+    {t:0.5, c:[226,160,63]},
+    {t:1, c:[226,87,76]}
+  ];
+  let a=stops[0], b=stops[stops.length-1];
+  for (let i=0;i<stops.length-1;i++){ if (rate>=stops[i].t && rate<=stops[i+1].t){ a=stops[i]; b=stops[i+1]; break; } }
+  const span = (b.t-a.t)||1;
+  const f = Math.min(1,Math.max(0,(rate-a.t)/span));
+  const c = a.c.map((v,i)=>Math.round(v+(b.c[i]-v)*f));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+/* ---------------------- 14. VIEW: MASTER DATA ---------------------- */
+function viewMasterData(){
+  document.getElementById('content').innerHTML = `
+    <div class="tabs" id="masterTabs">
+      <button class="tab-btn active" data-t="customer">Customer Master</button>
+      <button class="tab-btn" data-t="equipment">Equipment Master</button>
+      <button class="tab-btn" data-t="parts">Parts Master</button>
+      <button class="tab-btn" data-t="event">Event Master</button>
+      <button class="tab-btn" data-t="inspection">Inspection Master</button>
+    </div>
+    <div id="masterBody"></div>
+  `;
+  document.querySelectorAll('#masterTabs .tab-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('#masterTabs .tab-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      renderMasterTab(b.dataset.t);
+    });
+  });
+  renderMasterTab('customer');
+}
+function renderMasterTab(t){
+  const body = document.getElementById('masterBody');
+  if (t==='customer'){
+    body.innerHTML = `<div class="panel"><div class="table-scroll"><table><thead><tr><th>고객사</th><th>총 처리 파츠 수</th><th>누적 사이클</th><th>불량률</th></tr></thead><tbody>
+      ${CUSTOMERS.map(c=>{
+        const s = SERIALS.filter(x=>x.customer===c);
+        const cy = ALL_CYCLES.filter(x=>x.customer===c);
+        return `<tr><td>${c}</td><td class="mono">${s.length}</td><td class="mono">${cy.length}</td><td class="mono">${pct(defectRate(cy))}</td></tr>`;
+      }).join('')}
+    </tbody></table></div></div>`;
+  } else if (t==='equipment'){
+    body.innerHTML = `<div class="panel"><div class="table-scroll"><table><thead><tr><th>세정장비 코드</th><th>가동 건수</th><th>불량률</th><th>공장 배치</th></tr></thead><tbody>
+      ${CLEAN_EQUIP.map(e=>{
+        const cy = ALL_CYCLES.filter(x=>x.equip===e);
+        const factories = [...new Set(cy.map(x=>x.factory))].join(', ');
+        return `<tr><td class="mono">${e}</td><td class="mono">${cy.length}</td><td class="mono">${pct(defectRate(cy))}</td><td>${factories}</td></tr>`;
+      }).join('')}
+    </tbody></table></div></div>`;
+  } else if (t==='parts'){
+    body.innerHTML = `<div class="panel"><div class="table-scroll"><table><thead><tr><th>PARTS KIT</th><th>코팅여부</th><th>기준 수명(h)</th><th>등록 S/N 수</th><th>평균 사이클 수</th></tr></thead><tbody>
+      ${PART_KITS.map(k=>{
+        const cohort = cohortFor(k.name);
+        const avgCycles = cohort.length ? (cohort.reduce((s,c)=>s+c.cycles.length,0)/cohort.length).toFixed(1) : '-';
+        return `<tr><td>${k.name}</td><td>${k.coated?'코팅':'비코팅'}</td><td class="mono">${k.baseLife}h</td><td class="mono">${cohort.length}</td><td class="mono">${avgCycles}</td></tr>`;
+      }).join('')}
+    </tbody></table></div></div>`;
+  } else if (t==='event'){
+    body.innerHTML = `<div class="panel"><div class="table-scroll"><table><thead><tr><th>이벤트 유형</th><th>정의</th><th>발생 건수</th></tr></thead><tbody>
+      <tr><td>${issueBadge('정상')}</td><td>기준 규격 이내, 표준 절차 완료</td><td class="mono">${ALL_CYCLES.filter(c=>c.issue==='정상').length}</td></tr>
+      <tr><td>${issueBadge('CD불량')}</td><td>Critical Dimension 규격 이탈</td><td class="mono">${ALL_CYCLES.filter(c=>c.issue==='CD불량').length}</td></tr>
+      <tr><td>${issueBadge('DEFECT')}</td><td>Particle / 표면 결함</td><td class="mono">${ALL_CYCLES.filter(c=>c.issue==='DEFECT').length}</td></tr>
+      <tr><td>${issueBadge('NPW문제')}</td><td>NPW(Non-Product Wafer) 테스트 이상</td><td class="mono">${ALL_CYCLES.filter(c=>c.issue==='NPW문제').length}</td></tr>
+      <tr><td>${pmBadge('BM')}</td><td>고장/이상에 의한 비정기 정비</td><td class="mono">${ALL_CYCLES.filter(c=>c.pmType==='BM').length}</td></tr>
+    </tbody></table></div></div>`;
+  } else if (t==='inspection'){
+    body.innerHTML = `<div class="grid cols-2">
+      <div class="panel"><div class="panel-head"><div class="panel-title">입고 검사자</div></div>
+        <table><thead><tr><th>이름</th><th>검사 건수</th></tr></thead><tbody>
+        ${INSPECTORS_IN.map(n=>`<tr><td>${n}</td><td class="mono">${ALL_CYCLES.filter(c=>c.inspectorIn===n).length}</td></tr>`).join('')}
+        </tbody></table></div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">출고 검사자</div></div>
+        <table><thead><tr><th>이름</th><th>검사 건수</th></tr></thead><tbody>
+        ${INSPECTORS_OUT.map(n=>`<tr><td>${n}</td><td class="mono">${ALL_CYCLES.filter(c=>c.inspectorOut===n).length}</td></tr>`).join('')}
+        </tbody></table></div>
+    </div>`;
+  }
+}
+
+/* ---------------------- 15. VIEW: ACCESS CONTROL ---------------------- */
+function viewAccessControl(){
+  const roleDefs = [
+    {id:'admin', name:'관리자', desc:'전체 화면 접근, 마스터데이터 관리, 신규 등록/수정, 권한 설정', color:'var(--accent)'},
+    {id:'inspector', name:'검사자', desc:'입출고/이력/품질 분석 접근, 검사 결과 입력 가능. 마스터데이터·권한관리 접근 불가', color:'var(--accent-2)'},
+    {id:'operator', name:'작업자', desc:'입출고 현황과 담당 세정 작업 이력 입력 위주. 통합분석/마스터데이터 접근 불가', color:'var(--warn)'},
+    {id:'customer', name:'고객사 조회', desc:'본인 고객사(예: ' + CUSTOMERS[0] + ') 데이터만 조회 가능한 Read-only 포털 뷰', color:'var(--good)'}
+  ];
+  document.getElementById('content').innerHTML = `
+    <div class="section-note">역할(Role)에 따라 좌측 네비게이션 및 데이터 접근 범위가 자동으로 제한됩니다. 상단 우측 드롭다운에서 역할을 바꿔 직접 확인해보세요.</div>
+    <div class="grid cols-2">
+      ${roleDefs.map(r=>`
+        <div class="panel" style="border-left:3px solid ${r.color};">
+          <div class="panel-head"><div class="panel-title">${r.name} <span class="tag">${r.id}</span></div></div>
+          <div class="small-text" style="line-height:1.7;">${r.desc}</div>
+          <div style="margin-top:12px;">
+            ${NAV.flatMap(g=>g.items).filter(it=>it.roles.includes(r.id)).map(it=>`<span class="badge neutral" style="margin:2px;">${it.label}</span>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* ---------------------- 16. VIEW: ROADMAP ---------------------- */
+function viewRoadmap(){
+  const items = [
+    {status:'연동 대상', color:'var(--accent)', title:'ERP 연동', desc:'구매/재고/거래명세 데이터를 ERP와 동기화하여 입고 예정 정보를 자동 반영합니다.'},
+    {status:'연동 대상', color:'var(--accent)', title:'MES 연동', desc:'고객 Fab MES와 연계, 장비/챔버 가동 이력 및 PM 스케줄을 자동으로 수신합니다.'},
+    {status:'구현 가능', color:'var(--good)', title:'Barcode / QR', desc:'S/N 라벨을 QR/바코드로 발급하고, 스캔 시 이 이력 조회 화면으로 바로 연결합니다.'},
+    {status:'검토중', color:'var(--warn)', title:'RFID', desc:'세정장비 투입/반출 시점을 RFID 태깅으로 자동 기록, 수기입력 오류를 제거합니다.'},
+    {status:'구현됨', color:'var(--good)', title:'CSV Import/Export', desc:'입출고 리스트 및 시리얼 이력을 CSV로 내보낼 수 있습니다. (상단 각 화면의 내보내기 버튼)'},
+    {status:'향후 확장', color:'#b79bee', title:'모바일 앱', desc:'현장 작업자가 태블릿/모바일에서 반입·반출·세정 이력을 즉시 입력합니다.'},
+    {status:'향후 확장', color:'#b79bee', title:'사진 기반 검사', desc:'입고/출고 검사 시 파츠 사진을 첨부하여 이력에 시각적 증적을 남깁니다.'},
+    {status:'향후 확장', color:'#b79bee', title:'AI Vision 검사', desc:'Particle/Defect를 이미지 인식으로 자동 판별, 검사자 편차를 줄입니다.'},
+    {status:'향후 확장', color:'#b79bee', title:'고객사 Portal', desc:'고객사가 직접 로그인해 본인 파츠의 이력과 잔존 수명을 조회하는 전용 포털.'}
+  ];
+  document.getElementById('content').innerHTML = `
+    <div class="section-note">본 데모에서 실제로 동작하는 것은 CSV 내보내기 기능이며, 나머지 항목은 연동 로드맵으로 표시됩니다.</div>
+    <div class="roadmap-grid">
+      ${items.map(it=>`<div class="roadmap-card" style="border-left:3px solid ${it.color};">
+        <span class="rc-status" style="background:${it.color}22;color:${it.color};">${it.status}</span>
+        <h4>${it.title}</h4><p>${it.desc}</p>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
+/* ---------------------- 17. VIEW ROUTER ---------------------- */
+function renderView(viewId){
+  const map = {
+    'exec-dashboard': viewExecDashboard,
+    'ops-dashboard': viewOpsDashboard,
+    'quality-dashboard': viewQualityDashboard,
+    'lifecycle-dashboard': viewLifecycleDashboard,
+    'inout-list': viewInoutList,
+    'event-log': viewEventLog,
+    'analytics': viewAnalytics,
+    'master-data': viewMasterData,
+    'access-control': viewAccessControl,
+    'roadmap': viewRoadmap
+  };
+  (map[viewId] || viewExecDashboard)();
+}
+
+function bindSnLinks(){
+  document.querySelectorAll('.sn-link').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      selectedSN = el.dataset.sn;
+      switchView('lifecycle-dashboard');
+    });
+  });
+}
+
+/* ---------------------- 18. 신규 등록 MODAL ---------------------- */
+function openNewRecordModal(){
+  const overlay = document.getElementById('modalOverlay');
+  const modal = document.getElementById('modalBody');
+  modal.innerHTML = `
+    <h3>신규 입고 / 세정 사이클 등록</h3>
+    <div class="msub">DEMO — 등록된 내용은 현재 세션에만 반영되며 새로고침 시 초기화됩니다.</div>
+    <div class="form-grid">
+      <div class="form-field"><label>시리얼 번호 (기존 S/N 입력 시 이력에 사이클 추가)</label><input id="nSn" placeholder="예: FRA1001-234" /></div>
+      <div class="form-field"><label>고객사</label><select id="nCustomer">${CUSTOMERS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>공정</label><select id="nProcess">${PROCESSES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>장비사</label><select id="nMaker">${MAKERS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>호기명</label><input id="nTool" placeholder="예: TEL-ETCH-3" /></div>
+      <div class="form-field"><label>챔버명</label><input id="nChamber" placeholder="예: CH2" /></div>
+      <div class="form-field"><label>PARTS KIT</label><select id="nKit">${PART_KITS.map(k=>`<option>${k.name}</option>`).join('')}</select></div>
+      <div class="form-field"><label>정비유형</label><select id="nPm">${PM_TYPES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>반입일</label><input type="date" id="nInDate" /></div>
+      <div class="form-field"><label>반출일</label><input type="date" id="nOutDate" /></div>
+      <div class="form-field"><label>세정공장</label><select id="nFactory">${FACTORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>세정장비</label><select id="nEquip">${CLEAN_EQUIP.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>세정담당자</label><select id="nOperator">${OPERATORS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>사이클구분</label><select id="nCycleType">${CYCLE_TYPES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>입고검사자</label><select id="nInspIn">${INSPECTORS_IN.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>출고검사자</label><select id="nInspOut">${INSPECTORS_OUT.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>이슈 유형</label><select id="nIssue">${ISSUE_TYPES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>Recoating 진행</label><select id="nRecoat"><option value="N">아니오</option><option value="Y">예</option></select></div>
+      <div class="form-field full"><label>조치내용</label><textarea id="nAction" placeholder="수행한 세정/코팅/조치 내용을 입력하세요"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="nCancel">취소</button>
+      <button class="btn" id="nSave">등록</button>
+    </div>
+  `;
+  const today = fmtDate(new Date());
+  document.getElementById('nInDate').value = today;
+  document.getElementById('nOutDate').value = today;
+  overlay.classList.add('open');
+  document.getElementById('nCancel').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e)=>{ if (e.target===overlay) closeModal(); });
+  document.getElementById('nSave').addEventListener('click', saveNewRecord);
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+
+function saveNewRecord(){
+  const val = id => document.getElementById(id).value;
+  const snInput = val('nSn').trim();
+  const kitInfo = PART_KITS.find(k=>k.name===val('nKit'));
+  let serial = SERIALS.find(s=>s.sn===snInput);
+  const inD = new Date(val('nInDate')), outD = new Date(val('nOutDate'));
+
+  const cycle = {
+    sn: snInput || `NEW-${Date.now().toString().slice(-6)}`,
+    customer: val('nCustomer'), maker: val('nMaker'), process: val('nProcess'),
+    gas: (GAS_BY_PROCESS[val('nProcess')]||['-'])[0], toolId: val('nTool')||'-', chamber: val('nChamber')||'-',
+    kit: val('nKit'),
+    inDate: fmtDate(inD), outDate: fmtDate(outD), inDateObj: inD, outDateObj: outD,
+    factory: val('nFactory'), equip: val('nEquip'), operator: val('nOperator'),
+    inspectorIn: val('nInspIn'), inspectorOut: val('nInspOut'),
+    pmType: val('nPm'), issue: val('nIssue'), coated: kitInfo?kitInfo.coated:true,
+    recoating: val('nRecoat')==='Y', cycleType: val('nCycleType'),
+    usageHours: randInt(150,500), action: val('nAction') || '수기 등록 (조치내용 미입력)',
+    isLast: true
+  };
+
+  if (!serial){
+    serial = {
+      sn: cycle.sn, kit: cycle.kit, coatedKit: cycle.coated, baseLife: kitInfo?kitInfo.baseLife:500,
+      customer: cycle.customer, maker: cycle.maker, process: cycle.process, gas: cycle.gas,
+      toolId: cycle.toolId, chamber: cycle.chamber, retired:false, retiredReason:null, cycles:[]
+    };
+    SERIALS.push(serial);
+  }
+  cycle.cycleNo = serial.cycles.length + 1;
+  serial.cycles.forEach(c=>c.isLast=false);
+  serial.cycles.push(cycle);
+  ALL_CYCLES.push(cycle);
+  ALL_CYCLES.sort((a,b)=>a.inDateObj-b.inDateObj);
+
+  closeModal();
+  selectedSN = serial.sn;
+  refreshSnDatalist();
+  switchView('lifecycle-dashboard');
+}
+
+/* ---------------------- 19. GLOBAL SEARCH / DATALIST ---------------------- */
+function refreshSnDatalist(){
+  document.getElementById('snList').innerHTML = SERIALS.map(s=>`<option value="${s.sn}">`).join('');
+}
+function initGlobalSearch(){
+  const input = document.getElementById('globalSearch');
+  input.addEventListener('change', ()=>{
+    const v = input.value.trim();
+    if (SERIALS.find(s=>s.sn===v)){
+      selectedSN = v; input.value=''; switchView('lifecycle-dashboard');
+    }
+  });
+}
+
+/* ---------------------- 20. INIT ---------------------- */
+function init(){
+  refreshSnDatalist();
+  initGlobalSearch();
+  document.getElementById('roleSelect').addEventListener('change', (e)=>{
+    currentRole = e.target.value;
+    document.getElementById('newRecordBtn').style.display = currentRole==='customer' ? 'none' : 'flex';
+    switchView(currentView);
+  });
+  document.getElementById('newRecordBtn').addEventListener('click', openNewRecordModal);
+  renderNav();
+  switchView('exec-dashboard');
+}
+document.addEventListener('DOMContentLoaded', init);
+
+})();
+
+</script>
+</body>
+</html>
